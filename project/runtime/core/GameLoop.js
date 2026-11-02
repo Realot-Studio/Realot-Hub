@@ -133,6 +133,31 @@ export class GameLoop {
   }
 
   /**
+   * Advances exactly ONE simulation frame of `seconds` of GAME time (default
+   * 1/60), synchronously, whether or not the loop is running or paused.
+   * Automated playtests (the AI bridge's play_step / play_input tools) use it
+   * so a test is repeatable frame-for-frame and never waits on
+   * requestAnimationFrame, which browsers throttle in hidden windows.
+   * Runs the same post-update hooks as a normal frame.
+   * @param {number} [seconds] game seconds to simulate (clamped to 0..0.5)
+   */
+  step(seconds) {
+    const wanted = Number(seconds);
+    const dt = Math.max(0, Math.min(Number.isFinite(wanted) ? wanted : 1 / 60, MAX_SCALED_FRAME_SECONDS));
+    this.world.timeScale = this._readTimeScale();
+    if (this.scriptSystem && typeof this.scriptSystem.setUnscaledDelta === "function") {
+      this.scriptSystem.setUnscaledDelta(dt);
+    }
+    try {
+      this.world.update(dt);
+    } catch (err) {
+      console.error("[GameLoop] world.update() threw during step() — frame skipped:", err);
+    }
+    if (this.onAfterUpdate) this.onAfterUpdate();
+    if (this.onTick) this.onTick(dt);
+  }
+
+  /**
    * Current game speed multiplier (scripts set it via time.scale). 1 when no
    * script system is attached.
    * @returns {number}

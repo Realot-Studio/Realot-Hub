@@ -38,3 +38,14 @@ The relay runs on Cloudflare's **free plan**: it uses a SQLite-backed Durable Ob
 ## For developers
 `mcp-core.js` (MCP protocol, shared) · `worker.js` (Cloudflare Worker + Durable Object) ·
 `relay-node.mjs` (same relay for local testing: `npm install && npm run local`, address `http://localhost:8787`).
+
+
+## Playtesting and discovery tools
+
+The AI can play and test the game it builds, not just edit it:
+
+* `play_restart`, `play_input`, `play_step` — start the game fresh and drive it with keys, clicks, taps, drags and waits on a fixed 60 fps time step (repeatable). `play_input` also takes `assert`, `eval`, `inspect` and `screenshot` steps and reports failed assertions and new script errors.
+* `play_screenshot`, `play_get_state`, `play_get_entity`, `play_eval`, `play_get_errors` — see and read the running game (positions, velocities, `this.*` script variables, `global` values).
+* `get_engine_guide`, `describe_component`, `check_project`, `duplicate_entities`, `clear_console` — learn the engine, validate the project, copy entities, reset the log.
+
+Each tool call has a 25 second limit; split long tests into several `play_input` calls (the game keeps its state between calls). The browser must allow the Play popup.

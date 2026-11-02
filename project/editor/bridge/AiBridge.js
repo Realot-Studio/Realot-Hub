@@ -22,6 +22,7 @@ import { runMcpAssetTool } from "../mcp/McpAssetTools.js";
 import { runMcpEditorTool } from "../mcp/McpEditorTools.js";
 import { runMcpProjectTool } from "../mcp/McpProjectTools.js";
 import { runMcpWorkflowTool } from "../mcp/McpWorkflowTools.js";
+import { runMcpPlayTool } from "../mcp/McpPlayTools.js";
 import { validateComponentProps, formatProblems } from "../mcp/ComponentRules.js";
 
 const STORE_KEY = "realot_ai_bridge";
@@ -39,6 +40,7 @@ const MUTATING = new Set([
   "add_tag", "delete_tag", "create_prefab", "instantiate_prefab", "rename_prefab", "delete_prefab",
   "create_folder", "rename_folder", "move_folder", "delete_folder", "update_prefab", "revert_prefab",
   "unpack_prefab", "duplicate_scene", "delete_script", "set_script_enabled", "bake_navworld",
+  "duplicate_entities",
 ]);
 const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 
@@ -450,6 +452,8 @@ async function runTool(name, a) {
       if (projectResult) return projectResult;
       const workflowResult = await runMcpWorkflowTool(name, a);
       if (workflowResult) return workflowResult;
+      const playResult = await runMcpPlayTool(name, a);
+      if (playResult) return playResult;
       return err("Unknown tool: " + name);
     }
   }

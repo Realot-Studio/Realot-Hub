@@ -118,6 +118,18 @@ export function setPlayWindowPaused(paused) {
   try { playWin.postMessage({ type: "realot_play_pause", paused: !!paused }, playOrigin); } catch (_) { /* popup mid-navigation */ }
 }
 
+/**
+ * Sends one message to the play popup on the origin it runs on. Used by
+ * PlayRemote.js for the AI playtest commands. Returns false if the popup is
+ * closed or the browser refused the message.
+ * @param {object} message
+ * @returns {boolean}
+ */
+export function postToPlayWindow(message) {
+  if (!isPlayWindowOpen()) return false;
+  try { playWin.postMessage(message, playOrigin); return true; } catch (_) { return false; }
+}
+
 export function closePlayWindow() {
   if (playWin && !playWin.closed) playWin.close();
   playWin = null;

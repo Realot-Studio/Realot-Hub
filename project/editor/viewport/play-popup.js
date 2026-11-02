@@ -33,6 +33,7 @@ import { registerTexture, registerAudio } from "../../runtime/assets/AssetManage
 import { RenderSystem } from "../../runtime/systems/RenderSystem.js";
 import { CAMERA } from "../../runtime/components/Camera.js";
 import { TRANSFORM } from "../../runtime/components/Transform.js";
+import { installPlayProbe } from "./play-probe.js";
 
 /**
  * The editor window's origin, given by PlayWindow.js as ?editor=<origin>.
@@ -508,6 +509,11 @@ async function boot() {
   window.addEventListener("resize", () => {
     pixiApp.renderer.resize(window.innerWidth, window.innerHeight);
   });
+
+  // AI playtest driver: lets the editor's AI bridge press keys, click, step
+  // frames, take screenshots and read game state in this window (see
+  // play-probe.js). Inert unless the editor sends it a command.
+  installPlayProbe({ game, pixiApp, postToEditor, fromEditor });
 }
 
 boot();

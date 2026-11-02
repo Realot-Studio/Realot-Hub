@@ -240,7 +240,7 @@
   },
   {
     "name": "set_playing",
-    "description": "Start or stop play mode (opens the game in the play window).",
+    "description": "Start or stop play mode (opens the game in the play window). For testing prefer play_restart (fresh start, waits until ready) and play_input.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -256,7 +256,7 @@
   },
   {
     "name": "get_console",
-    "description": "Recent editor/play console lines (logs, warnings, script errors).",
+    "description": "Recent editor/play console lines (logs, warnings, script errors). Use clear_console before a test so only new lines remain.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -270,7 +270,7 @@
   },
   {
     "name": "screenshot",
-    "description": "Image of the scene viewport as the user sees it.",
+    "description": "Image of the EDITOR scene viewport (with gizmos, grid and selection) — for checking level layout while building. To see the real game as a player does, use play_screenshot.",
     "inputSchema": {
       "type": "object",
       "properties": {},
@@ -1644,7 +1644,7 @@
   },
   {
     "name": "set_paused",
-    "description": "Pause or resume the running game. The game must be playing (see set_playing).",
+    "description": "Pause or resume the running game in real time. The game must be playing (see set_playing). Note: play_input and play_step leave the game paused; call this with paused=false to let it run on its own.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1743,6 +1743,440 @@
         }
       },
       "required": [],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "get_engine_guide",
+    "description": "START HERE when building a game. Returns a short, accurate guide to the workflow, coordinates (+Y is down), script lifecycle and globals, and how to test. Optional topic: testing, scripting, physics, assets, ui.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string",
+          "enum": [
+            "testing",
+            "scripting",
+            "physics",
+            "assets",
+            "ui"
+          ],
+          "description": "Omit for the overview."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "describe_component",
+    "description": "Show every field of a component type with its type, default value, allowed values (enums) and numeric range. Use before create_entity/add_component/update_component so the first call is valid.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Component type, e.g. Rigidbody2D, Collider2D, SpriteRenderer, Light, CharacterController (see componentTypes in get_editor_state)."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ]
+    }
+  },
+  {
+    "name": "check_project",
+    "description": "Static health check of the whole project (all scenes): missing/duplicate Main Camera, scripts with syntax errors, Script components pointing at missing scripts, missing sprite/audio assets, Rigidbody2D without Collider2D, unattached scripts. Run it after building and before testing.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "duplicate_entities",
+    "description": "Copy one or more entities with all components (like Ctrl+D). Copies are offset so they do not overlap; use count to make a row of copies (e.g. coins, platforms, enemies). Undoable.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Entity ids to copy (max 50)."
+        },
+        "count": {
+          "type": "integer",
+          "description": "Number of copies of each (default 1, max 50). Copy n is offset n times."
+        },
+        "offset_x": {
+          "type": "number",
+          "description": "Default 32."
+        },
+        "offset_y": {
+          "type": "number",
+          "description": "Default 0."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "ids"
+      ]
+    }
+  },
+  {
+    "name": "clear_console",
+    "description": "Empty the editor Console so the next test run starts with a clean log.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "play_restart",
+    "description": "Start the game fresh from the current scenes and scripts (reloads the Play window if it is open) and wait until it is running. The game is left PAUSED so tests are deterministic: advance it with play_input or play_step. Returns the initial state and a screenshot. Needs the browser to allow the Play popup.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "settle_frames": {
+          "type": "integer",
+          "description": "Frames to simulate right after boot (default 10) so physics settles."
+        },
+        "screenshot": {
+          "type": "boolean",
+          "description": "Default true."
+        },
+        "max_width": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "play_input",
+    "description": "Play the game like a user, in one call: press keys, click/tap, drag, wait, take screenshots, read values and ASSERT results. Actions run in order on a fixed 60 fps time step, so results are repeatable. Returns per-action results, failed assertions, new script errors, final state and the screenshots. Limits: 120 actions, 4 screenshots, about 15 seconds of real time per call (long tests: split into several calls; the game keeps its state between calls). Typical: [{type:'hold',keys:['right'],seconds:1},{type:'assert',expression:\"findFirst('Player').x > 100\"},{type:'screenshot'}].",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "One step of a playtest. 'type' decides which other fields apply.",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "key_press",
+                  "hold",
+                  "key_down",
+                  "key_up",
+                  "wait",
+                  "click",
+                  "tap",
+                  "mouse_move",
+                  "mouse_down",
+                  "mouse_up",
+                  "drag",
+                  "swipe",
+                  "touch_down",
+                  "touch_move",
+                  "touch_up",
+                  "scene_load",
+                  "screenshot",
+                  "inspect",
+                  "eval",
+                  "assert"
+                ],
+                "description": "key_press {key, frames?=6}: tap a key. hold {keys[], frames|seconds}: hold keys down then release. key_down/key_up {key}: manual control (released automatically at the end). wait {frames|seconds}: let the game run. click {x,y|entity, space?, button?, frames?}: mouse click. tap: same with a touch finger. drag/swipe {from:{x,y|entity}, to:{x,y}, frames?}. mouse_*/touch_* are the low-level pieces. scene_load {name}. screenshot {label?, max_width?}: capture the game (max 4 per call). inspect {entity} or {filter:{name,tag,component}}: read state. eval {expression}: evaluate JS with the script globals and report the value. assert {expression, message?}: fails the test if the expression is falsy."
+              },
+              "key": {
+                "type": "string",
+                "description": "Key name: left/right/up/down/space/enter/escape/shift, a letter or digit, or a code like ArrowLeft, KeyA, Space."
+              },
+              "keys": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "For hold: several keys at once, e.g. [\"right\",\"space\"]."
+              },
+              "frames": {
+                "type": "integer",
+                "description": "Frames of game time (60 = one second)."
+              },
+              "seconds": {
+                "type": "number",
+                "description": "Seconds of game time."
+              },
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "entity": {
+                "type": "string",
+                "description": "Entity id or name in the running game (click/tap/inspect)."
+              },
+              "space": {
+                "type": "string",
+                "enum": [
+                  "screen",
+                  "world"
+                ],
+                "description": "Coordinate space for x/y. Default screen (game-view pixels). Use world for scene coordinates."
+              },
+              "button": {
+                "type": "integer",
+                "description": "Mouse button: 0 left, 1 middle, 2 right."
+              },
+              "id": {
+                "type": "integer",
+                "description": "Touch finger id (default 2) for multi-touch."
+              },
+              "from": {
+                "type": "object",
+                "description": "A point. Give x and y, or entity (id or name) to aim at that entity's position.",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  },
+                  "entity": {
+                    "type": "string",
+                    "description": "Entity id or name in the running game."
+                  },
+                  "space": {
+                    "type": "string",
+                    "enum": [
+                      "screen",
+                      "world"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "to": {
+                "type": "object",
+                "description": "A point. Give x and y, or entity (id or name) to aim at that entity's position.",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  },
+                  "entity": {
+                    "type": "string",
+                    "description": "Entity id or name in the running game."
+                  },
+                  "space": {
+                    "type": "string",
+                    "enum": [
+                      "screen",
+                      "world"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "name": {
+                "type": "string",
+                "description": "Scene name for scene_load."
+              },
+              "label": {
+                "type": "string",
+                "description": "Caption for a screenshot."
+              },
+              "max_width": {
+                "type": "integer",
+                "description": "Screenshot width in pixels (default 800, max 1600)."
+              },
+              "expression": {
+                "type": "string",
+                "description": "JavaScript expression for eval/assert. Script globals are in scope: findFirst(\"Player\").x, global.score, input, scene, time ... Use 'return' if you write several statements."
+              },
+              "message": {
+                "type": "string",
+                "description": "What a failed assert means."
+              },
+              "filter": {
+                "type": "object",
+                "description": "For inspect without an entity: {name, tag, component, active_only}.",
+                "additionalProperties": true
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "continue_on_error": {
+                "type": "boolean",
+                "description": "Keep going if this action errors (default: the run stops)."
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          "description": "Steps to perform, in order."
+        },
+        "restart": {
+          "type": "boolean",
+          "description": "Start the game fresh first (same as calling play_restart). Default false: continue the running game."
+        },
+        "dt": {
+          "type": "number",
+          "description": "Seconds per frame (default 1/60)."
+        },
+        "max_width": {
+          "type": "integer",
+          "description": "Default screenshot width."
+        },
+        "keep_paused": {
+          "type": "boolean",
+          "description": "Default true: the game stays paused after the test. Pass false to let it run in real time afterwards."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "actions"
+      ]
+    }
+  },
+  {
+    "name": "play_step",
+    "description": "Advance the paused game by N frames or seconds of game time (60 frames = 1 second) without any input, e.g. to let enemies move or physics settle. Optionally returns a screenshot.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "frames": {
+          "type": "integer",
+          "description": "Up to 3600."
+        },
+        "seconds": {
+          "type": "number"
+        },
+        "dt": {
+          "type": "number"
+        },
+        "screenshot": {
+          "type": "boolean"
+        },
+        "max_width": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "play_screenshot",
+    "description": "Image of the actual running game exactly as a player sees it (the Play window), unlike screenshot which shows the editor's scene viewport with gizmos. Includes HUD text and lighting.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "max_width": {
+          "type": "integer",
+          "description": "Default 960, max 1600."
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "jpeg",
+            "png"
+          ]
+        },
+        "label": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "play_get_state",
+    "description": "Live state of the running game: scene, frame, game time, `global` values, recent errors, and entities with position, velocity (Rigidbody2D) and the variables scripts stored on this (this.hp, this.score...). Filter to keep it small.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "filter": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Exact or partial name."
+            },
+            "tag": {
+              "type": "string"
+            },
+            "component": {
+              "type": "string",
+              "description": "Only entities that have this component, e.g. Rigidbody2D."
+            },
+            "active_only": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Default 60, max 200."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "play_get_entity",
+    "description": "One entity of the running game in full: every component field plus script variables.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "entity": {
+          "type": "string",
+          "description": "Entity id or name."
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "entity"
+      ]
+    }
+  },
+  {
+    "name": "play_eval",
+    "description": "Evaluate a JavaScript expression inside the running game with the script globals in scope (findFirst, findAll, global, input, scene, time, physics...). Read anything: findFirst('Player').hp. Change anything to set up a situation: (findFirst('Player').x = 900). Returns the value.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "expression": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "expression"
+      ]
+    }
+  },
+  {
+    "name": "play_get_errors",
+    "description": "Script and engine errors raised in the running game since it started (message, script, line, frame). Empty means the game ran cleanly.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "description": "Default 20, max 50."
+        }
+      },
       "additionalProperties": false
     }
   }

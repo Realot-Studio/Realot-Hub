@@ -50,6 +50,7 @@ import { openPlayWindow, closePlayWindow, isPlayWindowOpen, getPlayWindow, isTru
 import { attachEditorEvents, loadProjectFromFile } from "./state/EditorEvents.js";
 import { adoptFileHandle } from "./state/FileSync.js";
 import { initAiBridge } from "./bridge/AiBridge.js";
+import { handlePlayRemoteMessage } from "./viewport/PlayRemote.js";
 import { installAndroidBuildLeaveGuard } from "./state/AndroidBuildSession.js";
 import { editorState, pushLog, dirtyState } from "./state/EditorState.js";
 import { getEngineSettings } from "./state/EngineSettings.js";
@@ -411,6 +412,11 @@ function boot() {
     switch (e.data.type) {
       case "realot_play_ready":
         sendPlayPayload();
+        return;
+      case "realot_play_booted":
+      case "realot_play_cmd_result":
+        // AI playtest channel (see viewport/PlayRemote.js).
+        handlePlayRemoteMessage(e.data);
         return;
       case "realot_play_focus":
         setRemotePlayFocus(e.data.focused === true);
