@@ -499,7 +499,8 @@ function deployUrl(repoUrl) {
 export function openAiBridgePanel() {
   if (document.getElementById("ai-bridge-panel")) return;
   if (!cfg.key) { cfg.key = newKey(); saveCfg(); }
-  if (!cfg.repo) cfg.repo = RELAY_REPO_URL || guessRepo();
+  if (RELAY_REPO_URL) cfg.repo = RELAY_REPO_URL; // the engine's own repo always wins over a stale saved value
+  else if (!cfg.repo) cfg.repo = guessRepo();
 
   const wrap = document.createElement("div");
   wrap.id = "ai-bridge-panel";
@@ -589,7 +590,7 @@ export function openAiBridgePanel() {
   } else {
     $("cb-repo").addEventListener("input", (e) => { cfg.repo = e.target.value; saveCfg(); $("cb-deploy-note").textContent = ""; });
     $("cb-deploy").addEventListener("click", () => {
-      const u = deployUrl(cfg.repo);
+      const u = deployUrl(RELAY_REPO_URL || cfg.repo);
       if (!u) { $("cb-deploy-note").textContent = "Enter your GitHub address first (https://github.com/name/repo)."; return; }
       window.open(u, "_blank", "noopener");
     });

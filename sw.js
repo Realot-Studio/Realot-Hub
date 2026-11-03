@@ -14,7 +14,7 @@
  *   /project/player/play -> /project/player/play.html
  */
 
-const CACHE_NAME = "realot-offline-v29";
+const CACHE_NAME = "realot-offline-v31";
 const MANIFEST_URL = "/offline-manifest.json";
 
 // Pages that must exist in the cache for the app to be installable/offline.
@@ -44,7 +44,6 @@ function toCachePath(pathname) {
   if (pathname === "/") return "/index.html";
   if (pathname.endsWith("/")) return pathname + "index.html";
   if (pathname === "/project/player/play") return "/project/player/play.html";
-  if (pathname === "/docs") return "/docs/index.html";
   return pathname;
 }
 

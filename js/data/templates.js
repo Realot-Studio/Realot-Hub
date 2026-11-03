@@ -34,7 +34,7 @@ window.RealotTemplates = [
         id: 'topdown',
         name: 'Top-Down',
         icon: 'swords',
-        description: 'Top-down dungeon crawler: steer a robot through a dark, torch-lit dungeon, collect every coin, and dodge the red patrol robots. You have 3 lives.',
+        description: 'Top-down starter: steer a robot with WASD or the arrow keys, collect every coin, and stay away from the red patrol robots. Touch one and it is game over.',
         // Same real-project-seeding pattern as 'platformer' above — see
         // its comment for the full explanation. Data lives in
         // js/data/templates/topdown.data.js.
@@ -45,7 +45,7 @@ window.RealotTemplates = [
         id: 'flappy-bird',
         name: 'Flappy Bird',
         icon: 'bird',
-        description: 'Tap or press Space to flap through gaps between pipes. Score a point for every pipe you pass and try to beat your best.',
+        description: 'Tap or press Space to flap through the gaps between pipes. You score a point for every pair you pass. A tiny three-script starter.',
         // Same real-project-seeding pattern as 'platformer' above — see
         // its comment for the full explanation.
         hasBundledData: true,

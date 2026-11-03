@@ -46,7 +46,7 @@ APK**; there is no custom-server or credential setup in the editor.
 
 ## Documentation and safety
 
-- `docs/index.html` — quick start, scripting API, exporting (linked from the hub's Learn tab).
+- Engine documentation: https://realot-studio-documentation.pages.dev/ (linked from the hub's Learn tab).
 - `SECURITY.md` — **read before sharing projects:** game scripts are not sandboxed; set up a separate play origin.
 - `file-association/` — how to get the Realot icon on `.realot` project files.
 - `tests/e2e-play-origin.py` — browser test for the Play window and its origin isolation.
@@ -60,7 +60,6 @@ APK**; there is no custom-server or credential setup in the editor.
 - `project/vendor/` — required local Pixi, Hammer, Rapier, Monaco, JSZip, and
   other vendor files
 - `css/`, `icons/`, and `js/` — the engine hub client
-- `docs/` — documentation pages
 - `sw.js` and `offline-manifest.json` — offline PWA support
 
 ## What is intentionally not included
@@ -77,4 +76,4 @@ Details and safety notes: `relay/README.md`.
 
 ## Object pooling
 
-See [docs/POOLING.md](docs/POOLING.md) — `pool.create / get / release`, `onEnable` / `onDisable`, `this.releaseToPool()`.
+See the engine documentation site: https://realot-studio-documentation.pages.dev/

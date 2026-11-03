@@ -1,8 +1,10 @@
 /**
  * LearnView.js
- * Documentation entry point. The docs themselves live in /docs/index.html
- * (static, works offline because it is listed in offline-manifest.json).
+ * Documentation entry point. The engine documentation lives on its own site;
+ * the hub only links to it (it is not bundled, so it is never out of date).
  */
+const DOCS_URL = "https://realot-studio-documentation.pages.dev/";
+
 window.RealotLearnView = {
     render() {
         const { el } = window.RealotDom;
@@ -19,9 +21,7 @@ window.RealotLearnView = {
         return el('div', { class: 'section' }, [
             el('div', { class: 'section-head' }, [el('div', { class: 'section-title' }, ['Documentation'])]),
             el('div', { class: 'learn-grid' }, [
-                card('/docs/index.html', 'book-open', 'Quick start', 'Make your first scene and press play.'),
-                card('/docs/index.html#api', 'code-2', 'Script API', 'Lifecycle functions, globals and components.'),
-                card('/docs/index.html#safety', 'shield-check', 'Safety', 'Running scripts from shared projects.')
+                card(DOCS_URL, 'book-open', 'Engine documentation', 'Guides, components and the full scripting API on the documentation site.')
             ])
         ]);
     }

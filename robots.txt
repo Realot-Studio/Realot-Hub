@@ -1,2 +1,5 @@
+# The hub is not meant to be found through search: it is reached from the Realot Studio home page.
+# Crawling stays allowed on purpose so Google can read the noindex tag/header; a Disallow here
+# would hide that tag and the URL could still end up listed.
 User-agent: *
 Allow: /

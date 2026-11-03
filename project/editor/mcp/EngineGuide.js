@@ -3,11 +3,13 @@
  *
  * Short on purpose: it is what an AI reads BEFORE building a game, so it has to be
  * accurate and cover the mistakes that cost the most time. Full references live in
- * the documentation site (llms.txt / llms-full.txt). Keep every statement here true
+ * the documentation site (https://realot-studio-documentation.pages.dev/llms.txt). Keep every statement here true
  * to the engine source; if an API changes, change this file in the same commit.
  */
 
 const OVERVIEW = `REALOT STUDIO — QUICK GUIDE FOR AI BUILDERS
+
+ENGINE DOCUMENTATION RULE: This is the engine's full documentation: https://realot-studio-documentation.pages.dev/ . Use that website for all the information you want about the engine. If you are unsure, use the engine API. Maximize using the engine API and components instead of writing complicated code: the engine has already solved common problems with a simple API, so use it and the user is not overwhelmed with code you provide. Use that URL and open https://realot-studio-documentation.pages.dev/llms.txt , or https://realot-studio-documentation.pages.dev/llms-full.txt for the complete documentation in one file. If you do not know the path of a page, search within the documentation using https://realot-studio-documentation.pages.dev/api/search?q=... (paths look like https://realot-studio-documentation.pages.dev/docs/api/components/transform.html).
 
 WORKFLOW THAT WORKS
 1. get_editor_state, list_scenes, list_entities, list_assets: see what exists before changing anything.
