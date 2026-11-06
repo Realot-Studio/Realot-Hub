@@ -30,10 +30,10 @@ window.RealotTopbar = {
         // work the way people expect from a normal link.
         const donateBtn = el('a', {
             class: 'btn btn-donate',
-            href: 'https://paypal.me/RealotStudio',
+            href: 'donate/',
             target: '_blank',
             rel: 'noopener noreferrer',
-            title: 'This engine is free, forever — if it saved you time, a donation (any amount) helps keep it that way.'
+            title: 'This engine is free, forever. If it saved you time, you can chip in with PayPal or Cash App.'
         }, [
             el('span', { html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>' }),
             'Donate'

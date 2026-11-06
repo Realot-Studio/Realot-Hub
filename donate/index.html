@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <title>Support Realot Studio</title>
+    <meta name="description" content="Realot Studio is free. If it saved you time, you can chip in with PayPal or Cash App.">
+    <meta name="theme-color" content="#161616">
+
+    <link rel="icon" href="../favicon.svg?v=4" type="image/svg+xml" sizes="any">
+    <link rel="icon" href="../favicon.ico?v=4" sizes="16x16 32x32 48x48">
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png?v=4">
+    <link href="../css/fonts/fonts.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/tokens.css">
+
+    <style>
+        /* ------------------------------------------------------------------
+           Donate page. Standalone (does not use the hub's app shell), but uses
+           the hub's colour tokens so it feels like the same product.
+           ------------------------------------------------------------------ */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --brand: #3A72B0;            /* swapped by JS: PayPal blue / Cash App green */
+            --brand-soft: rgba(58, 114, 176, 0.18);
+            --brand-glow: rgba(58, 114, 176, 0.45);
+            --card: rgba(43, 43, 43, 0.72);
+            --edge: rgba(255, 255, 255, 0.09);
+            --pad: clamp(16px, 4vw, 28px);
+        }
+        body[data-method="paypal"]  { --brand: #2f86d6; --brand-soft: rgba(47, 134, 214, 0.18); --brand-glow: rgba(47, 134, 214, 0.45); }
+        body[data-method="cashapp"] { --brand: #00c853; --brand-soft: rgba(0, 200, 83, 0.16);  --brand-glow: rgba(0, 200, 83, 0.42); }
+
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            min-height: 100vh;
+            background: #121212;
+            color: var(--text-main);
+            font-family: Inter, var(--font-ui);
+            font-size: 16px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Soft colour glows behind everything. */
+        body::before, body::after {
+            content: ""; position: fixed; z-index: 0; pointer-events: none;
+            width: 70vmax; height: 70vmax; border-radius: 50%; filter: blur(90px); opacity: .55;
+        }
+        body::before { top: -35vmax; left: -25vmax;  background: radial-gradient(circle, rgba(58,114,176,.55), transparent 65%); animation: drift 22s ease-in-out infinite alternate; }
+        body::after  { bottom: -38vmax; right: -28vmax; background: radial-gradient(circle, rgba(224,113,154,.40), transparent 65%); animation: drift 26s ease-in-out infinite alternate-reverse; }
+        @keyframes drift { to { transform: translate(6vmax, 4vmax) scale(1.08); } }
+
+        a { color: inherit; }
+        button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+        :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 3px; border-radius: 8px; }
+
+        .wrap { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: var(--pad); padding-bottom: 56px; }
+
+        .back {
+            display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 18px;
+            color: var(--text-muted); text-decoration: none; font-size: 14px; padding: 6px 10px 6px 6px; border-radius: 8px;
+            transition: color .15s, background .15s;
+        }
+        .back:hover { color: #fff; background: rgba(255,255,255,.06); }
+
+        /* ---------- hero ---------- */
+        .hero { text-align: center; padding: 14px 0 26px; }
+        .heart {
+            width: 76px; height: 76px; margin: 0 auto 18px; border-radius: 24px;
+            display: grid; place-items: center;
+            background: linear-gradient(145deg, rgba(224,113,154,.28), rgba(224,113,154,.08));
+            border: 1px solid rgba(224,113,154,.35);
+            box-shadow: 0 10px 40px rgba(224,113,154,.28);
+        }
+        .heart svg { width: 38px; height: 38px; stroke: var(--heart); fill: var(--heart); animation: beat 2.4s ease-in-out infinite; transform-origin: center; }
+        @keyframes beat { 0%, 60%, 100% { transform: scale(1); } 70% { transform: scale(1.14); } 80% { transform: scale(1); } 88% { transform: scale(1.08); } }
+        h1 { font-size: clamp(28px, 6vw, 40px); line-height: 1.15; font-weight: 700; letter-spacing: -.02em; }
+        h1 span { background: linear-gradient(90deg, #8ec1f5, #f08db4); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .lead { max-width: 520px; margin: 14px auto 0; color: var(--text-muted); font-size: clamp(15px, 2.4vw, 17px); }
+
+        /* ---------- main card ---------- */
+        .panel {
+            background: var(--card); border: 1px solid var(--edge); border-radius: 20px;
+            padding: clamp(18px, 4vw, 30px);
+            -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+            box-shadow: 0 24px 70px rgba(0,0,0,.45);
+        }
+        .step-label { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); }
+        .step-label b { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; color: #fff; background: var(--brand); transition: background .25s; }
+        .step + .step { margin-top: 26px; }
+
+        /* payment method switch */
+        .methods { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .method {
+            display: flex; align-items: center; gap: 12px; padding: 14px 16px; text-align: left;
+            border-radius: 14px; border: 1.5px solid var(--edge); background: rgba(255,255,255,.03);
+            transition: border-color .18s, background .18s, transform .12s, box-shadow .18s;
+        }
+        .method:hover { background: rgba(255,255,255,.06); }
+        .method:active { transform: scale(.985); }
+        .method[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); box-shadow: 0 0 0 4px var(--brand-soft); }
+        .m-ico { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: 20px; color: #fff; }
+        .m-ico.pp { background: linear-gradient(145deg, #2f86d6, #1a4f8f); font-style: italic; font-family: Georgia, serif; }
+        .m-ico.ca { background: linear-gradient(145deg, #00d65a, #00993f); }
+        .m-name { font-weight: 600; font-size: 16px; line-height: 1.2; }
+        .m-sub { font-size: 12.5px; color: var(--text-dim); }
+
+        /* amount chips */
+        .amounts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .chip {
+            padding: 14px 6px 12px; border-radius: 14px; text-align: center;
+            border: 1.5px solid var(--edge); background: rgba(255,255,255,.03);
+            transition: border-color .18s, background .18s, transform .12s, box-shadow .18s;
+        }
+        .chip:hover { background: rgba(255,255,255,.07); transform: translateY(-1px); }
+        .chip:active { transform: scale(.98); }
+        .chip[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); box-shadow: 0 0 0 4px var(--brand-soft); }
+        .chip .v { display: block; font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
+        .chip .c { display: block; margin-top: 1px; font-size: 12px; color: var(--text-dim); }
+        .chip.custom .v { font-size: 20px; padding-top: 2px; }
+
+        .custom-row { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .25s ease; }
+        .custom-row.open { grid-template-rows: 1fr; }
+        .custom-inner { overflow: hidden; }
+        .custom-box { margin-top: 12px; display: flex; align-items: center; gap: 8px; padding: 0 16px; height: 56px; border-radius: 14px; background: rgba(0,0,0,.28); border: 1.5px solid var(--edge); transition: border-color .15s; }
+        .custom-box:focus-within { border-color: var(--brand); box-shadow: 0 0 0 4px var(--brand-soft); }
+        .custom-box.bad { border-color: var(--danger); box-shadow: 0 0 0 4px rgba(224,105,98,.15); }
+        .custom-box .cur { font-size: 22px; font-weight: 700; color: var(--text-muted); }
+        .custom-box input { flex: 1; min-width: 0; height: 100%; background: none; border: 0; outline: 0; color: #fff; font: 600 22px Inter, var(--font-ui); }
+        .custom-box input::placeholder { color: var(--text-faint); font-weight: 500; font-size: 16px; }
+        .custom-box .usd { font-size: 12px; color: var(--text-dim); letter-spacing: .05em; }
+        .hint { min-height: 20px; margin: 8px 4px 0; font-size: 13px; color: var(--text-dim); }
+        .hint.bad { color: var(--danger); }
+
+        /* donate button */
+        .cta {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            width: 100%; margin-top: 26px; padding: 18px 20px; border-radius: 16px;
+            font-size: 18px; font-weight: 700; color: #fff; text-decoration: none; text-align: center;
+            background: var(--brand); /* fallback for browsers without color-mix() */
+            background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 62%, #000));
+            box-shadow: 0 12px 34px var(--brand-glow);
+            transition: transform .15s, box-shadow .2s, filter .2s, opacity .2s;
+        }
+        .cta:hover { transform: translateY(-2px); box-shadow: 0 16px 42px var(--brand-glow); filter: brightness(1.08); }
+        .cta:active { transform: translateY(0) scale(.99); }
+        .cta svg { width: 20px; height: 20px; }
+        .cta[aria-disabled="true"] { opacity: .45; pointer-events: none; box-shadow: none; filter: grayscale(.6); }
+        .secure { margin-top: 12px; text-align: center; font-size: 13px; color: var(--text-dim); }
+
+
+        /* Cash App QR (shown only for Cash App). White frame = the quiet zone scanners need. */
+        .qr { display: none; flex-direction: column; align-items: center; gap: 10px; margin-top: 22px; }
+        body[data-method="cashapp"] .qr { display: flex; }
+        .qr-frame { padding: 14px; border-radius: 18px; background: #fff; box-shadow: 0 10px 34px rgba(0,200,83,.28); line-height: 0; }
+        .qr-frame img { width: 200px; height: 200px; image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+        .qr-note { font-size: 13px; color: var(--text-dim); text-align: center; }
+
+        /* cash tag row */
+        .tag-row { display: none; margin-top: 16px; align-items: center; justify-content: center; gap: 10px; font-size: 14px; color: var(--text-muted); flex-wrap: wrap; }
+        body[data-method="cashapp"] .tag-row { display: flex; }
+        .tag-row code { font: 600 14px var(--font-mono); padding: 5px 10px; border-radius: 8px; background: rgba(0,0,0,.3); border: 1px solid var(--edge); color: #fff; }
+        .copy { padding: 5px 12px; border-radius: 8px; font-size: 13px; background: rgba(255,255,255,.07); transition: background .15s; }
+        .copy:hover { background: rgba(255,255,255,.13); }
+
+        /* "why" cards */
+        .why { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; }
+        .why div { padding: 16px; border-radius: 16px; background: rgba(255,255,255,.03); border: 1px solid var(--edge); }
+        .why h3 { font-size: 15px; margin-bottom: 4px; }
+        .why p { font-size: 13.5px; color: var(--text-muted); }
+        .why .e { font-size: 22px; display: block; margin-bottom: 6px; }
+
+        .thanks { margin-top: 30px; text-align: center; color: var(--text-dim); font-size: 14px; }
+        .thanks strong { color: var(--text-muted); font-weight: 600; }
+
+        @media (max-width: 560px) {
+            .methods { grid-template-columns: 1fr; }
+            .why { grid-template-columns: 1fr; }
+            .amounts { gap: 8px; }
+            .chip .v { font-size: 21px; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; }
+        }
+    </style>
+</head>
+<body data-method="paypal">
+<div class="wrap">
+    <a class="back" href="../">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Back to Realot Studio
+    </a>
+
+    <header class="hero">
+        <div class="heart" aria-hidden="true">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+        </div>
+        <h1>Keep Realot Studio <span>free for everyone</span></h1>
+        <p class="lead">Realot Studio is free and always will be. If it saved you time or helped you make something, a donation of any size helps keep it that way.</p>
+    </header>
+
+    <main class="panel">
+        <section class="step">
+            <p class="step-label"><b>1</b> How would you like to give?</p>
+            <div class="methods" role="group" aria-label="Payment method">
+                <button type="button" class="method" data-method="paypal" aria-pressed="true">
+                    <span class="m-ico pp" aria-hidden="true">P</span>
+                    <span><span class="m-name">PayPal</span><br><span class="m-sub">Card, bank or PayPal balance</span></span>
+                </button>
+                <button type="button" class="method" data-method="cashapp" aria-pressed="false">
+                    <span class="m-ico ca" aria-hidden="true">$</span>
+                    <span><span class="m-name">Cash App</span><br><span class="m-sub">Pay with Cash App</span></span>
+                </button>
+            </div>
+        </section>
+
+        <section class="step">
+            <p class="step-label"><b>2</b> Pick an amount</p>
+            <div class="amounts" id="amounts" role="group" aria-label="Donation amount"></div>
+            <div class="custom-row" id="customRow">
+                <div class="custom-inner">
+                    <label class="custom-box" id="customBox">
+                        <span class="cur" aria-hidden="true">$</span>
+                        <input id="customInput" type="text" inputmode="decimal" autocomplete="off" placeholder="Any amount" aria-label="Custom amount in US dollars" maxlength="9">
+                        <span class="usd" aria-hidden="true">USD</span>
+                    </label>
+                </div>
+            </div>
+            <p class="hint" id="hint" aria-live="polite"></p>
+        </section>
+
+        <a class="cta" id="cta" href="https://paypal.me/RealotStudio/5USD" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            <span id="ctaText">Donate $5 with PayPal</span>
+        </a>
+        <p class="secure" id="secure">You'll finish on PayPal's own secure site. Nothing is collected on this page.</p>
+
+        <div class="qr">
+            <div class="qr-frame"><img src="cashapp-qr.png" width="200" height="200" alt="QR code for the RealotStudio Cash App page" loading="lazy"></div>
+            <p class="qr-note">On your phone? Scan this with your camera or the Cash App.<br>The amount is chosen in the app.</p>
+        </div>
+
+        <div class="tag-row">
+            <span>Cash App tag</span>
+            <code>$RealotStudio</code>
+            <button type="button" class="copy" id="copyTag">Copy</button>
+        </div>
+    </main>
+
+    <section class="why" aria-label="What your donation does">
+        <div><span class="e" aria-hidden="true">&#127381;</span><h3>Keeps it free</h3><p>No paywall, no ads. Donations are what make that possible.</p></div>
+        <div><span class="e" aria-hidden="true">&#128736;&#65039;</span><h3>Fuels new features</h3><p>More time for fixes, tools and templates you ask for.</p></div>
+        <div><span class="e" aria-hidden="true">&#128153;</span><h3>Totally optional</h3><p>Using Realot Studio never requires paying. Ever.</p></div>
+    </section>
+
+    <p class="thanks"><strong>Thank you</strong> for being part of Realot Studio. Whether you give, share it, or just make something cool with it, it means a lot.</p>
+
+    <noscript><p class="thanks">Enable JavaScript to pick an amount, or go straight to
+        <a href="https://paypal.me/RealotStudio">PayPal</a> or <a href="https://cash.app/$RealotStudio">Cash App</a>.</p></noscript>
+</div>
+
+<script>
+(function () {
+    "use strict";
+
+    /* PURE:start  (link building + amount checking; has no page access, so it can be tested on its own) */
+    var PAYPAL_USER = "RealotStudio";
+    var CASH_TAG = "$RealotStudio";
+    var MIN_AMOUNT = 1;
+    var MAX_AMOUNT = 10000;
+
+    /** Turns typed text into { empty, ok, value }. Accepts "5", "5.5", "5.50", ".5"; rejects anything else. */
+    function parseAmount(text) {
+        var t = String(text == null ? "" : text).replace(/[\s,$]/g, "");
+        if (t === "") return { empty: true, ok: true, value: null };
+        if (!/^\d*\.?\d{0,2}$/.test(t) || t === ".") return { empty: false, ok: false, value: null };
+        var n = Math.round(parseFloat(t) * 100) / 100;
+        if (!isFinite(n) || n < MIN_AMOUNT || n > MAX_AMOUNT) return { empty: false, ok: false, value: null };
+        return { empty: false, ok: true, value: n };
+    }
+
+    /** 5 -> "5", 5.5 -> "5.50" (the form both services accept in the link). */
+    function formatAmount(n) {
+        return Math.round(n * 100) % 100 === 0 ? String(Math.round(n)) : n.toFixed(2);
+    }
+
+    /** Builds the link to open. amount === null means "no amount, let them type it there". */
+    function buildLink(method, amount) {
+        if (method === "cashapp") {
+            return "https://cash.app/" + CASH_TAG + (amount == null ? "" : "/" + formatAmount(amount));
+        }
+        return "https://paypal.me/" + PAYPAL_USER + (amount == null ? "" : "/" + formatAmount(amount) + "USD");
+    }
+    /* PURE:end */
+
+    var PRESETS = [
+        { v: 2,   c: "Thanks!" },
+        { v: 5,   c: "A coffee" },
+        { v: 10,  c: "Big thanks" },
+        { v: 25,  c: "Super fan" },
+        { v: 50,  c: "Champion" },
+        { v: 100, c: "Legend" }
+    ];
+    var NAMES = { paypal: "PayPal", cashapp: "Cash App" };
+
+    var state = { method: "paypal", preset: 5, custom: false, customText: "" };
+
+    var body = document.body;
+    var amountsEl = document.getElementById("amounts");
+    var customRow = document.getElementById("customRow");
+    var customBox = document.getElementById("customBox");
+    var customInput = document.getElementById("customInput");
+    var hint = document.getElementById("hint");
+    var cta = document.getElementById("cta");
+    var ctaText = document.getElementById("ctaText");
+    var secure = document.getElementById("secure");
+    var methodBtns = Array.prototype.slice.call(document.querySelectorAll(".method"));
+    var chipBtns = [];
+
+    // Build the amount chips once.
+    PRESETS.forEach(function (p) {
+        var b = document.createElement("button");
+        b.type = "button"; b.className = "chip"; b.dataset.value = String(p.v);
+        b.innerHTML = '<span class="v">$' + p.v + '</span><span class="c">' + p.c + "</span>";
+        b.addEventListener("click", function () { state.custom = false; state.preset = p.v; render(); });
+        amountsEl.appendChild(b); chipBtns.push(b);
+    });
+    var customChip = document.createElement("button");
+    customChip.type = "button"; customChip.className = "chip custom";
+    customChip.innerHTML = '<span class="v">Custom</span><span class="c">Your call</span>';
+    customChip.addEventListener("click", function () {
+        state.custom = true; render();
+        try { customInput.focus(); } catch (e) {}
+    });
+    amountsEl.appendChild(customChip);
+
+    methodBtns.forEach(function (b) {
+        b.addEventListener("click", function () { state.method = b.dataset.method; render(); });
+    });
+    customInput.addEventListener("input", function () { state.customText = customInput.value; render(); });
+
+    function render() {
+        var name = NAMES[state.method];
+        body.dataset.method = state.method;
+
+        methodBtns.forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.method === state.method)); });
+        chipBtns.forEach(function (b) {
+            b.setAttribute("aria-pressed", String(!state.custom && Number(b.dataset.value) === state.preset));
+        });
+        customChip.setAttribute("aria-pressed", String(state.custom));
+        customRow.classList.toggle("open", state.custom);
+
+        // Work out the amount to send: a preset, a valid custom number, or nothing (custom left empty).
+        var amount = state.custom ? null : state.preset;
+        var bad = false, hintText = "";
+        if (state.custom) {
+            var parsed = parseAmount(state.customText);
+            if (!parsed.ok) { bad = true; hintText = "Enter an amount from $" + MIN_AMOUNT + " to $" + MAX_AMOUNT.toLocaleString("en-US") + "."; }
+            else if (parsed.empty) { hintText = "Leave it empty and you can type any amount on " + name + "."; }
+            else amount = parsed.value;
+        }
+        customBox.classList.toggle("bad", bad);
+        hint.classList.toggle("bad", bad);
+        hint.textContent = hintText;
+
+        // Update the button.
+        cta.setAttribute("aria-disabled", String(bad));
+        if (bad) {
+            cta.removeAttribute("href");
+            ctaText.textContent = "Enter a valid amount";
+        } else {
+            cta.href = buildLink(state.method, amount);
+            ctaText.textContent = amount == null ? "Continue to " + name : "Donate $" + formatAmount(amount) + " with " + name;
+        }
+        secure.textContent = "You'll finish on " + name + "'s own secure site. Nothing is collected on this page.";
+    }
+
+    // Copy the Cash App tag.
+    var copyBtn = document.getElementById("copyTag");
+    copyBtn.addEventListener("click", function () {
+        function done(ok) { copyBtn.textContent = ok ? "Copied!" : "Press Ctrl+C"; setTimeout(function () { copyBtn.textContent = "Copy"; }, 1600); }
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(CASH_TAG).then(function () { done(true); }, function () { done(false); }); return; }
+        } catch (e) {}
+        done(false);
+    });
+
+    // Shareable links: /donate/?method=cashapp&amount=10  (amount can also be "custom").
+    try {
+        var q = new URLSearchParams(location.search);
+        var m = q.get("method");
+        if (m === "paypal" || m === "cashapp") state.method = m;
+        var a = q.get("amount");
+        if (a != null) {
+            var pa = parseAmount(a);
+            if (pa.ok && !pa.empty && PRESETS.some(function (p) { return p.v === pa.value; })) state.preset = pa.value;
+            else if (pa.ok && !pa.empty) { state.custom = true; state.customText = formatAmount(pa.value); customInput.value = state.customText; }
+            else if (a === "custom") state.custom = true;
+        }
+    } catch (e) { /* old browser: keep the defaults */ }
+
+    render();
+})();
+</script>
+</body>
+</html>
