@@ -1,14 +1,18 @@
 /**
  * editor/viewport/PlayWindow.js
  *
- * "Play" opens a real, independent runtime instance in a separate
- * browser popup window (editor/viewport/play-popup.html +
- * play-popup.js), sized to the Main Camera's exact export resolution
- * via runtime/core/CameraUtils.js — the SAME function the editor's
+ * "Play" starts a real, independent runtime instance of the game. By default
+ * it runs inside the editor's Game tab (an iframe, see GameView.js); the
+ * Game tab's "Open in window" button runs it in a separate browser popup
+ * instead. Both load the same page (editor/viewport/play-popup.html +
+ * play-popup.js) and speak the same postMessage protocol, so everything
+ * below works for either; only "which window is the game in" differs.
+ * The popup is sized to the Main Camera's exact export resolution via
+ * runtime/core/CameraUtils.js — the SAME function the editor's
  * CameraGizmo.js uses to draw the camera frame, so the gizmo's edges in
  * the Scene view are exactly what play mode (and a real export) shows.
  *
- * The popup boots its own PIXI Application + World + createGame() from
+ * The play page boots its own PIXI Application + World + createGame() from
  * runtime/index.js and loads the CURRENT in-editor scene (read straight
  * off the live game instance via getSceneData(), which is backed by
  * runtime/scene/SceneSerializer.js — no duplicate serialization logic
@@ -27,8 +31,12 @@ import { getAllPrefabs } from "../../runtime/prefabs/PrefabRegistry.js";
 import { notifyPlayWindowChanged } from "../state/FocusScheduler.js";
 import { getEngineSettings } from "../state/EngineSettings.js";
 import { getNavAreaNames } from "../state/NavAreas.js";
+import { loadGameFrame, unloadGameFrame, getGameFrameWindow } from "./GameView.js";
 
-let playWin = null;
+/** "embedded" = inside the Game tab, "popup" = separate window, null = not running. */
+let playMode = null;
+let playWin = null;        // the popup window (popup mode only)
+let runCounter = 0;        // makes every start a fresh navigation, even to the same URL
 let pendingPayload = null;
 let playOrigin = window.location.origin;
 
@@ -66,86 +74,124 @@ function buildPlayUrl() {
   const target = playOrigin === window.location.origin ? local : new URL(local.pathname, playOrigin);
   // Tells the popup which origin it may talk to (and accept payloads from).
   target.searchParams.set("editor", window.location.origin);
+  // A different URL every run, so starting again is always a fresh load.
+  target.searchParams.set("run", String(++runCounter));
   return target.toString();
 }
 
 /**
+ * The window the game currently runs in (the Game tab's iframe or the popup),
+ * or null when nothing is running. Every function below goes through this, so
+ * none of them needs to care which mode is active.
+ * @returns {Window|null}
+ */
+function currentTarget() {
+  if (playMode === "embedded") return getGameFrameWindow();
+  if (playMode === "popup" && playWin && !playWin.closed) return playWin;
+  return null;
+}
+
+/** "embedded", "popup", or null when the game is not running. */
+export function getPlayMode() {
+  return currentTarget() ? playMode : null;
+}
+
+/**
  * True only for a message that came from THIS play window, on the origin we
- * opened it on. Everything the popup sends is untrusted data (it is produced
+ * opened it on. Everything the game sends is untrusted data (it is produced
  * by game scripts); this just stops other windows from injecting messages.
  * @param {MessageEvent} e
  */
 export function isTrustedPlayMessage(e) {
-  return !!(playWin && !playWin.closed && e.source === playWin && e.origin === playOrigin);
+  const target = currentTarget();
+  return !!(target && e.source === target && e.origin === playOrigin);
 }
 
-/** Answers the popup's "ready" message with the scene payload. */
+/** Answers the game's "ready" message with the scene payload. */
 export function sendPlayPayload() {
-  if (!isPlayWindowOpen() || !pendingPayload) return;
+  const target = currentTarget();
+  if (!target || !pendingPayload) return;
   try {
-    playWin.postMessage({ type: "realot_play_payload", payload: pendingPayload }, playOrigin);
+    target.postMessage({ type: "realot_play_payload", payload: pendingPayload }, playOrigin);
   } catch (err) {
-    pushLog("error", "Could not send the scene to the play window: " + (err && err.message ? err.message : err));
+    pushLog("error", "Could not send the scene to the game: " + (err && err.message ? err.message : err));
   }
 }
 
 export function isPlayWindowOpen() {
-  return !!(playWin && !playWin.closed);
+  return !!currentTarget();
 }
 
 /**
- * Raw popup window reference, for FocusScheduler.js's focus polling.
- * A thin getter rather than exporting `playWin` directly so callers
- * always see the current value (a plain re-exported binding would work
- * too under ES modules' live-binding semantics, but a function makes
- * that intent explicit and matches the () => Window|null shape
- * initFocusScheduler() expects).
+ * The window the game runs in, for FocusScheduler.js's focus polling.
+ * A function (not an exported variable) so callers always see the current one.
  * @returns {Window|null}
  */
 export function getPlayWindow() {
-  return playWin;
+  return currentTarget();
 }
 
 /**
- * Pauses/resumes the popup's live game loop. Safe to call whether or not the
- * popup is open — a no-op if it's closed. Sent as a message because the
- * popup may live on a different origin (see resolvePlayOrigin); a popup that
- * hasn't finished booting yet applies the last pause state once it has.
+ * Pauses/resumes the running game loop. Safe to call whether or not a game is
+ * running. Sent as a message because the game may live on a different origin
+ * (see resolvePlayOrigin); one that hasn't finished booting applies the last
+ * pause state once it has.
  * @param {boolean} paused
  */
 export function setPlayWindowPaused(paused) {
-  if (!isPlayWindowOpen()) return;
-  try { playWin.postMessage({ type: "realot_play_pause", paused: !!paused }, playOrigin); } catch (_) { /* popup mid-navigation */ }
+  const target = currentTarget();
+  if (!target) return;
+  try { target.postMessage({ type: "realot_play_pause", paused: !!paused }, playOrigin); } catch (_) { /* mid-navigation */ }
 }
 
 /**
- * Sends one message to the play popup on the origin it runs on. Used by
- * PlayRemote.js for the AI playtest commands. Returns false if the popup is
- * closed or the browser refused the message.
+ * Sends one message to the running game on the origin it runs on. Used by
+ * PlayRemote.js for the AI playtest commands. Returns false if no game is
+ * running or the browser refused the message.
  * @param {object} message
  * @returns {boolean}
  */
 export function postToPlayWindow(message) {
-  if (!isPlayWindowOpen()) return false;
-  try { playWin.postMessage(message, playOrigin); return true; } catch (_) { return false; }
+  const target = currentTarget();
+  if (!target) return false;
+  try { target.postMessage(message, playOrigin); return true; } catch (_) { return false; }
 }
 
+/** Stops whatever is running (either mode) and frees it. Safe to call anytime. */
 export function closePlayWindow() {
-  if (playWin && !playWin.closed) playWin.close();
-  playWin = null;
+  teardown();
+  restoreViewportTab();
   notifyPlayWindowChanged();
 }
 
+/** Closes the popup / unloads the Game tab's frame. Leaves the viewport tab alone. */
+function teardown() {
+  if (playWin && !playWin.closed) playWin.close();
+  playWin = null;
+  unloadGameFrame();
+  playMode = null;
+}
+
+/** Play switches to the Game tab; Stop puts the user back where they were. */
+function restoreViewportTab() {
+  const before = editorState.viewportTabBeforePlay;
+  editorState.viewportTabBeforePlay = null;
+  if (before && editorState.viewportTab === "game") editorState.viewportTab = before;
+}
+
 /**
- * Opens (or refocuses) the play popup, sized exactly to the scene's
- * Main Camera resolution, and boots an independent runtime game inside
- * it running the current scene data.
+ * Starts the game (or restarts it if it is already running) with the current
+ * scene data, in an independent runtime instance.
  *
  * @param {ReturnType<import('../../runtime/index.js').createGame>} game
  *   the editor's live game instance (used only to read scene data via
  *   its public getSceneData() — never mutated).
+ * @param {{mode?: "embedded"|"popup"}} [options]
+ *   "embedded" (default) runs in the Game tab; "popup" opens a separate window
+ *   sized to the Main Camera's resolution.
  */
-export function openPlayWindow(game) {
+export function openPlayWindow(game, options) {
+  const mode = options && options.mode === "popup" ? "popup" : "embedded";
   const world = editorState.world;
   if (!world || !game) return;
 
@@ -196,14 +242,41 @@ export function openPlayWindow(game) {
   pendingPayload = { sceneData, allScenes, width, height, spriteAssets, audioAssets, gameFps: getEngineSettings().gameFps, navAreaNames: getNavAreaNames(), prefabs: getAllPrefabs() };
   playOrigin = resolvePlayOrigin();
 
-  if (isPlayWindowOpen()) {
+  // Switching between the Game tab and a popup: stop the other one first, so
+  // there is never more than one copy of the game running.
+  if (playMode && playMode !== mode) teardown();
+
+  if (mode === "embedded") {
+    openEmbedded(camera, width, height);
+  } else {
+    openPopup(camera, width, height);
+  }
+}
+
+/** Runs the game in the Game tab. Starting again simply reloads the frame. */
+function openEmbedded(camera, width, height) {
+  // Show the Game tab (and remember where to go back to when Play stops).
+  if (editorState.viewportTab !== "game") {
+    if (editorState.viewportTabBeforePlay == null) editorState.viewportTabBeforePlay = editorState.viewportTab;
+    editorState.viewportTab = "game";
+  }
+  playMode = "embedded";
+  loadGameFrame(buildPlayUrl());   // keyboard focus goes to the frame once it loads
+  notifyPlayWindowChanged();
+  pushLog("log", "Entered Play mode (" + camera.aspectMode + ", " + width + "x" + height + ").");
+}
+
+/** Runs the game in a separate browser window sized to the camera. */
+function openPopup(camera, width, height) {
+  // Coming out of the Game tab: put the viewport back where it was.
+  restoreViewportTab();
+
+  if (isPlayWindowOpen() && playMode === "popup") {
     // Assigning location works across origins; location.reload() does not.
     playWin.location.href = buildPlayUrl();
     playWin.focus();
-    // See the window.open() branch below for why a single synchronous
-    // focus() call is unreliable on ChromeOS — same reasoning applies
-    // to a reload of an already-open popup, so re-assert focus a beat
-    // later too.
+    // A single synchronous focus() call is unreliable on ChromeOS, so
+    // re-assert focus a beat later too.
     setTimeout(() => { if (playWin && !playWin.closed) playWin.focus(); }, 150);
     notifyPlayWindowChanged();
     return;
@@ -220,37 +293,22 @@ export function openPlayWindow(game) {
 
   playWin = window.open(buildPlayUrl(), "realot_play", features);
   if (!playWin) {
-    pushLog("error", "Play window was blocked by the browser's popup blocker. Allow popups for this site and press Play again.");
+    playMode = null;
+    pushLog("error", "The game window was blocked by the browser's popup blocker. Allow popups for this site, or use the Game tab instead.");
     notifyPlayWindowChanged();
     return;
   }
+  playMode = "popup";
   notifyPlayWindowChanged();
-  // window.open() does NOT reliably hand keyboard focus to the new
-  // window on every platform — on ChromeOS in particular the popup can
-  // open fully rendered and running, but with focus silently left on
-  // the editor window. Since ScriptAPI's keydown/keyup listeners are
-  // attached to the popup's own `window`, an unfocused popup means
-  // every key press is delivered to the editor instead, and scripts
-  // see nothing — input.keyDown()/keyPressed() never go true even
-  // though nothing is actually broken. Explicitly focus it here so
-  // the very first Play press works, not just the reload path below.
-  //
-  // A single call right after window.open() can still lose the race on
-  // ChromeOS: the OS sometimes finishes creating/painting the window
-  // AFTER this synchronous call has already run, silently re-stealing
-  // focus back to the editor once painting completes. play-popup.js's
-  // own window.focus() call in its boot() (see BUG FIX comment there)
-  // covers the case where its document finishes loading — but a
-  // window can visibly render before its <script type="module"> has
-  // finished importing and started executing (module fetch + top-level
-  // work isn't instant), leaving a gap where neither the opener's
-  // focus() nor the popup's own has landed yet. Re-asserting focus a
-  // couple more times over the next second closes that gap without
-  // waiting on any load event.
+  // window.open() does NOT reliably hand keyboard focus to the new window on
+  // every platform (ChromeOS in particular). The game's key listeners live on
+  // the popup's own window, so an unfocused popup means scripts see no input.
+  // A single call can still lose the race with the OS painting the window, so
+  // re-assert focus a few times over the next second.
   playWin.focus();
   [150, 400, 800].forEach((delay) => {
     setTimeout(() => { if (playWin && !playWin.closed) playWin.focus(); }, delay);
   });
 
-  pushLog("log", "Entered Play mode (" + camera.aspectMode + ", " + width + "x" + height + ").");
+  pushLog("log", "Entered Play mode in a separate window (" + camera.aspectMode + ", " + width + "x" + height + ").");
 }

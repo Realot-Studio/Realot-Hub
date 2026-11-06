@@ -46,6 +46,7 @@ import { renderStatusBar, startLiveStats } from "./panels/StatusBar.js";
 // byte identical (no query string on any of them) so they always
 // resolve to the SAME module instance.
 import { mountOrUpdateSceneViewport, getGame, detachViewportCanvas, isInitialProjectLoadDone, captureProjectThumbnail } from "./viewport/SceneViewport.js";
+import { syncGameView } from "./viewport/GameView.js";
 import { openPlayWindow, closePlayWindow, isPlayWindowOpen, getPlayWindow, isTrustedPlayMessage, sendPlayPayload } from "./viewport/PlayWindow.js";
 import { attachEditorEvents, loadProjectFromFile } from "./state/EditorEvents.js";
 import { adoptFileHandle } from "./state/FileSync.js";
@@ -99,6 +100,7 @@ function render() {
   if (editorState.isPlaying && !isPlayWindowOpen()) {
     editorState.isPlaying = false;
     editorState.isPaused = false;
+    closePlayWindow(); // also returns the viewport to the tab Play started from
   }
 
   // Each overlay/panel is rendered defensively: if one throws (e.g. a
@@ -289,6 +291,7 @@ function render() {
   }
 
   mountOrUpdateSceneViewport(render);
+  try { syncGameView(); } catch (err) { console.error("[render] Game view sync failed:", err); }
   mountScriptEditor();
 
   if (editorState.inspectorScrollTo) {
@@ -309,11 +312,11 @@ function render() {
   }
 }
 
-function onTogglePlay(isPlaying) {
+function onTogglePlay(isPlaying, options) {
   const game = getGame();
   if (!game) return;
   if (isPlaying) {
-    openPlayWindow(game);
+    openPlayWindow(game, options);
   } else {
     closePlayWindow();
   }

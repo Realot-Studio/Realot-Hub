@@ -52,14 +52,35 @@ const EDITOR_ORIGIN = (function () {
   return window.location.origin;
 })();
 
+/**
+ * The editor window this page reports to. This page runs in one of two places:
+ *   - a separate popup window  -> the editor is window.opener
+ *   - the editor's Game tab    -> the editor is window.parent (we are an iframe)
+ * Everything else in this file asks hostWindow() instead of guessing, so both
+ * modes behave identically.
+ */
+function hostWindow() {
+  try {
+    if (window.opener && !window.opener.closed) return window.opener;
+    if (window.parent && window.parent !== window) return window.parent;
+  } catch (_) { /* cross-origin access is fine for the checks above; anything else means "no host" */ }
+  return null;
+}
+
+function hasHost() {
+  return !!hostWindow();
+}
+
 function postToEditor(msg) {
   try {
-    if (window.opener && !window.opener.closed) window.opener.postMessage(msg, EDITOR_ORIGIN);
+    const host = hostWindow();
+    if (host) host.postMessage(msg, EDITOR_ORIGIN);
   } catch (_) { /* editor navigated away or closed */ }
 }
 
 function fromEditor(e) {
-  return e.source === window.opener && e.origin === EDITOR_ORIGIN && e.data && typeof e.data === "object";
+  const host = hostWindow();
+  return !!host && e.source === host && e.origin === EDITOR_ORIGIN && e.data && typeof e.data === "object";
 }
 
 let _game = null;          // set once the game is running
@@ -148,7 +169,7 @@ function loadAudioAssets(audioAssets) {
  */
 function _wireConsoleForwarding() {
   function forwardLog(level, args) {
-    if (!(window.opener && !window.opener.closed)) return;
+    if (!hasHost()) return;
     const text = args
       .map(function (a) {
         if (a instanceof Error) return a.message;
@@ -320,7 +341,7 @@ async function boot() {
   const payload = await requestPayload();
   if (!payload) {
     document.body.innerHTML =
-      '<div style="color:#eee;font:12px monospace;padding:16px;">No scene data received from the editor. Close this window and press Play again.</div>';
+      '<div style="color:#eee;font:12px monospace;padding:16px;">No scene data received from the editor. Press Stop, then Play again.</div>';
     return;
   }
 
@@ -407,7 +428,7 @@ async function boot() {
   // (bound before wrapping) still gets it for anyone with devtools open.
   if (game.scriptSystem) {
     game.scriptSystem.onError(function (err) {
-      if (window.opener && !window.opener.closed) {
+      if (hasHost()) {
         postToEditor({
           type: "realot_script_error",
           scriptName: err.scriptName,
@@ -433,7 +454,7 @@ async function boot() {
 
   function _wireGlobalErrorForwarding() {
     function forward(message, line, scriptName, method) {
-      if (window.opener && !window.opener.closed) {
+      if (hasHost()) {
         postToEditor({
           type: "realot_script_error",
           scriptName: scriptName || "(engine)",

@@ -15,6 +15,13 @@ import { MemoryWatchdog } from "./MemoryWatchdog.js";
 // at once. At 60 FPS this still allows ~30x.
 const MAX_SCALED_FRAME_SECONDS = 0.5;
 
+// How early (ms) a frame may arrive and still count as "on time" when the FPS
+// cap is checked. Display refresh intervals rarely divide the cap evenly (a
+// 140 fps cap is 7.14 ms; a 144 Hz screen delivers a frame every 6.94 ms), and
+// without this slack every other frame would be skipped and the game would run
+// at half speed (72 fps) instead of ~140.
+const FRAME_CAP_TOLERANCE_MS = 1;
+
 export class GameLoop {
   /**
    * @param {import('./World.js').World} world
@@ -71,6 +78,7 @@ export class GameLoop {
     // rAF itself, same as every rAF-based game loop in a browser — the
     // engine cannot render faster than the display refreshes.
     this._minFrameMs = 0; // 0 = unlimited (every rAF tick runs)
+    this._nextFrameAt = 0; // earliest time (rAF timestamp) the next capped frame may run
     this.setTargetFps((opts && opts.targetFps) || 0);
 
 
@@ -101,6 +109,7 @@ export class GameLoop {
    */
   setTargetFps(fps) {
     this._minFrameMs = fps > 0 ? 1000 / fps : 0;
+    this._nextFrameAt = 0; // pace from the next frame on, not from the old cap's schedule
   }
 
   start() {
@@ -189,9 +198,19 @@ export class GameLoop {
     // SceneViewport.js's PIXI ticker.maxFPS uses on the editor side —
     // see FocusScheduler.js's file-level comment for why rAF is kept
     // as the scheduler either way.
-    if (this._minFrameMs > 0 && now - this._lastTime < this._minFrameMs) {
-      this._rafHandle = requestAnimationFrame(this._tickFn);
-      return;
+    //
+    // Pacing uses a running schedule (_nextFrameAt) instead of "time since the
+    // last frame": each frame that runs moves the schedule forward by exactly
+    // one frame interval, so the AVERAGE rate lands on the cap even when the
+    // display's refresh rate doesn't divide it evenly (see
+    // FRAME_CAP_TOLERANCE_MS). The schedule never falls more than one frame
+    // behind `now`, so a slow frame can't cause a burst of catch-up frames.
+    if (this._minFrameMs > 0) {
+      if (now < this._nextFrameAt - FRAME_CAP_TOLERANCE_MS) {
+        this._rafHandle = requestAnimationFrame(this._tickFn);
+        return;
+      }
+      this._nextFrameAt = Math.max(this._nextFrameAt + this._minFrameMs, now);
     }
 
     // rawDt = real seconds since the last frame (clamped to avoid huge jumps

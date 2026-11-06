@@ -493,7 +493,7 @@ function guessRepo() {
 function deployUrl(repoUrl) {
   const clean = String(repoUrl || "").trim().replace(/\.git$/i, "").replace(/\/+$/, "").replace(/\/tree\/.*$/, "");
   if (!/^https:\/\/github\.com\/[^/]+\/[^/]+$/i.test(clean)) return null;
-  return "https://deploy.workers.cloudflare.com/?url=" + encodeURIComponent(clean + "/tree/main/relay");
+  return "https://deploy.workers.cloudflare.com/?url=" + encodeURIComponent(clean); // the relay sits at the root of its own repo
 }
 
 export function openAiBridgePanel() {

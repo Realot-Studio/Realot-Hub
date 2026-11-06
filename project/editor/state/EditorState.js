@@ -109,6 +109,13 @@ export const editorState = {
 
   isPlaying: false,
   isPaused: false,
+  /** @type {"scene"|"game"} which tab of the centre viewport is showing (Unity's Scene / Game tabs).
+   *  Pressing Play switches to "game" and Stop switches back — see PlayWindow.js. */
+  viewportTab: "scene",
+  /** @type {?("scene"|"game")} the tab to go back to when Play stops (null = nothing to restore). */
+  viewportTabBeforePlay: null,
+  /** @type {string} Game tab aspect choice: "free" | "camera" | "16:9" | "16:10" | "4:3" | "3:2" | "9:16". */
+  gameAspect: "free",
   /** @type {boolean} cached (last-known) status of whether an FSA
    *  backup directory is currently granted and usable — see
    *  RealotPersistence.js's isFsaBackupEnabled(), which is async

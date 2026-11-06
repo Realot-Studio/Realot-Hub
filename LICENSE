@@ -1,0 +1,128 @@
+REALOT STUDIO SOURCE-AVAILABLE LICENSE
+Version 1.0
+
+Copyright (c) 2026 Realot Studio. All rights reserved.
+[Replace "Realot Studio" with your legal name or company name before publishing.]
+
+This is NOT an open-source license. The source code is available so you can read it,
+learn from it and run it on your own computer, but the engine remains the property of
+the Licensor.
+
+1. DEFINITIONS
+
+"Licensor"          Realot Studio, the owner of the Engine.
+"Engine"            Everything in this repository and every copy of it: the editor, the hub,
+                    the runtime, the player, the relay and MCP bridge, templates, scripts,
+                    tools, documentation, artwork and any other file, in source or built form,
+                    including modified copies.
+                    The separately published realot-bridge repository
+                    (https://github.com/Realot-Studio/realot-bridge) is NOT part of the
+                    Engine; it has its own license.
+"You"               The person or organization using the Engine.
+"Your Game"         A game, project, scene, script, image, sound or other content that You
+                    create with the Engine.
+"Exported Game"     A playable build of Your Game made with the Engine's export feature.
+"Third-Party Components"
+                    Software and assets written by other people that are included in or used
+                    by the Engine, for example the libraries listed in
+                    THIRD_PARTY_LICENSES.md and in project/vendor/.
+
+2. WHAT YOU MAY DO
+
+Subject to this License, the Licensor grants You a free, non-exclusive, non-transferable,
+revocable license to:
+
+  a) view and read the Engine's source code;
+  b) download the Engine and run it locally on your own computer (including a local web
+     server used only by You, on your own machine or private network);
+  c) modify your local copy for your own private use, for example to learn or to fix
+     something for yourself, as long as the modified copy is not shared with anyone else;
+  d) use the Engine, the hosted Realot Studio editor and the bundled templates to make
+     Your Game.
+
+3. YOUR GAMES BELONG TO YOU
+
+You own Your Game. You may publish it, host it online, sell it, license it and make money
+from it in any way You like, with no fee and no royalty to the Licensor.
+
+You may distribute an Exported Game together with the Engine runtime files that the export
+feature puts into it. This permission covers the game only. It does not allow You to
+distribute the editor, the hub or the rest of the Engine, and an Exported Game must not be
+used as a way to hand out or sell the Engine itself.
+
+Owning Your Game does not give You ownership of the Engine. Material that comes with the
+Engine (templates, sample art, sounds and scripts) is licensed to You only for use inside
+Your Game, and You may not repackage it as a stand-alone product, asset pack or template.
+
+4. WHAT YOU MAY NOT DO
+
+Without the Licensor's written permission, You may NOT:
+
+  a) publish, host, upload, mirror, deploy or otherwise make the Engine, or any part of it,
+     available to the public or to anyone else, online or offline. This includes forks and
+     copies in public or shared repositories, other websites, app stores, file-sharing
+     services and download sites, and it includes hosting a copy of the editor or hub for
+     other people to use;
+  b) sell, resell, rent, lease, sublicense, trade or charge money for the Engine or any part
+     of it, or include it in a paid product, subscription or service (other than an Exported
+     Game as described in section 3);
+  c) claim that You created, own or are the author of the Engine or any part of it, or remove
+     or hide the Licensor's copyright notices and credits;
+  d) use the Engine or any part of its code as a starting point or foundation for another
+     game engine, game editor, game-creation tool, or a similar product, and then improve,
+     publish, release or sell it, whether the result is a modified copy, a rewrite that closely
+     follows the Engine, or a "new" engine built from the Engine's source;
+  e) share, publish or distribute modified versions of the Engine or patches that contain
+     the Engine's code;
+  f) use the names "Realot", "Realot Studio" or the Engine's logos in a way that suggests
+     Your product is made, approved or endorsed by the Licensor.
+
+Reading the source in order to learn from it is allowed. Copying large parts of it into
+something You publish is not.
+
+5. THIRD-PARTY COMPONENTS (YOU MUST KEEP THEIR LICENSES)
+
+The Engine includes Third-Party Components. Each one stays under its own license, which is
+not changed by this License. The full list and license texts are in THIRD_PARTY_LICENSES.md,
+project/vendor/THIRD_PARTY_NOTICES.md, project/vendor/RUNTIME_LICENSES.txt and the LICENSE
+files inside project/vendor/.
+
+You must not remove, hide, shorten or change any third-party copyright notice, license text
+or attribution that comes with the Engine or that is added to an Exported Game. When You
+distribute an Exported Game, You must keep the third-party notices that the export includes
+and follow any other duties those licenses place on You.
+
+You have full freedom over Your Game, but that freedom does not release You from the
+licenses of the Third-Party Components. You must keep respecting them.
+
+6. OWNERSHIP
+
+The Engine is licensed, not sold. The Licensor keeps all rights, title and interest in it.
+No rights are granted except those written in this License.
+
+7. TERMINATION
+
+This License ends automatically if You break any of its terms. When it ends You must stop
+using the Engine and delete all copies of it that You hold. Games You have already made
+remain Yours, but You may no longer use the Engine to make them or keep distributing the
+Engine's runtime files inside them. The Licensor may also end this License for a person who
+publishes or sells the Engine.
+
+8. NO WARRANTY
+
+THE ENGINE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
+
+9. LIMITATION OF LIABILITY
+
+TO THE FULL EXTENT ALLOWED BY LAW, THE LICENSOR IS NOT LIABLE FOR ANY CLAIM, DAMAGES, LOSS OF
+DATA OR PROFITS, OR OTHER LIABILITY ARISING FROM THE ENGINE OR ITS USE.
+
+10. GENERAL
+
+If any part of this License cannot be enforced, the rest stays in effect. Not enforcing a
+term is not a waiver of it. This License is the whole agreement about the Engine between You
+and the Licensor. The Licensor may publish a new version of this License; the version that
+came with the copy You downloaded applies to that copy.
+
+Permission requests and questions: [add your contact email or website here]

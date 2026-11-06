@@ -46,8 +46,8 @@ export function waitForPlayBoot(sinceMs, timeoutMs = 15000) {
     const timer = setTimeout(() => {
       cleanup();
       reject(new Error(isPlayWindowOpen()
-        ? "The game window opened but did not finish starting within " + Math.round(timeoutMs / 1000) + " s. Check get_console for errors."
-        : "The game window did not open. The browser probably blocked the popup — ask the user to allow popups for this site (or press Play once), then try again."));
+        ? "The game started but did not finish loading within " + Math.round(timeoutMs / 1000) + " s. Check get_console for errors."
+        : "The game did not start. Ask the user to press Play once in the editor, then try again."));
     }, timeoutMs);
     function cleanup() { clearTimeout(timer); bootWaiters.delete(done); }
     bootWaiters.add(done);

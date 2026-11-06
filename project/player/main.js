@@ -323,6 +323,8 @@ async function boot() {
   if (window.visualViewport) window.visualViewport.addEventListener("resize", resizeGameToMount, { passive: true });
   resizeGameToMount();
 
+  // Same cap as exported games (editor/export/ExportGame.js), so this page behaves like a real build.
+  game.loop.setTargetFps(140);
   game.loop.start();
 
   // Debug HUD — see createDebugOverlay() above / play-popup.js for the

@@ -70,6 +70,11 @@ import { getNavAreaNames } from "../state/NavAreas.js";
  * those are dev-only and never imported by runtime/index.js's own
  * import graph.
  */
+/** Exported games never run faster than this many frames per second, whatever
+ *  the player's monitor refresh rate is. Saves battery and GPU on 165/240 Hz
+ *  screens. Enforced by runtime/core/GameLoop.js's FPS cap. */
+const EXPORT_MAX_FPS = 140;
+
 const RUNTIME_FILES = [
   "EngineVersion.js",
   "assets/AssetManager.js",
@@ -1060,7 +1065,7 @@ export async function buildExport(game, options) {
     new Set(spriteManifest.map((e) => e.key)),
     new Set(audioManifest.map((e) => e.key))
   );
-  zip.file("main.js", buildMainJs({ spriteManifest, audioManifest, sceneAssets, gameFps: 0, navAreaNames: getNavAreaNames() }));
+  zip.file("main.js", buildMainJs({ spriteManifest, audioManifest, sceneAssets, gameFps: EXPORT_MAX_FPS, navAreaNames: getNavAreaNames() }));
   zip.file(
     "index.html",
     buildIndexHtml(

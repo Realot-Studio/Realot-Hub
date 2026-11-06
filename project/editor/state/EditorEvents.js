@@ -466,6 +466,25 @@ let _lastSceneClick = { id: null, time: 0 };
         onTogglePlay(editorState.isPlaying);
         render();
         break;
+      // Scene / Game tabs above the viewport (Unity-style). The game keeps
+      // running when you look at the Scene tab; it is only hidden.
+      case "viewport-tab-scene":
+      case "viewport-tab-game":
+        editorState.viewportTab = action === "viewport-tab-game" ? "game" : "scene";
+        // Choosing a tab yourself replaces the automatic "go back after Stop".
+        editorState.viewportTabBeforePlay = null;
+        render();
+        break;
+      // Move a running game between the Game tab and a separate window.
+      // Both restart the game (the two live in different windows).
+      case "game-pop-out":
+      case "game-dock":
+        if (editorState.isPlaying) {
+          editorState.isPaused = false;
+          onTogglePlay(true, { mode: action === "game-pop-out" ? "popup" : "embedded" });
+          render();
+        }
+        break;
       case "toggle-pause":
         if (editorState.isPlaying) {
           editorState.isPaused = !editorState.isPaused;
@@ -2708,6 +2727,9 @@ case "select-scene-file": {
     }
     if (e.key === " " || e.code === "Space") {
       e.preventDefault();
+      // A held key repeats keydown; without this the game would start and
+      // stop again while Space is still held after pressing it to start.
+      if (e.repeat) return;
       editorState.isPlaying = !editorState.isPlaying;
       editorState.isPaused = false;
       onTogglePlay(editorState.isPlaying);
@@ -3139,6 +3161,11 @@ case "select-scene-file": {
   });
 
   document.addEventListener("change", (e) => {
+    if (e.target.dataset.action === "set-game-aspect") {
+      editorState.gameAspect = e.target.value || "free";
+      render();
+      return;
+    }
     if (e.target.dataset.action === "set-active-nav-area") {
       const idx = parseInt(e.target.value, 10);
       if (!isNaN(idx)) editorState.activeNavAreaIndex = idx;

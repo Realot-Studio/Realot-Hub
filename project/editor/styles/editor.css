@@ -585,3 +585,17 @@ body.show-component-notes .inspector-note-inline{display:inline;}
   height: 11px;
   accent-color: #2c5d87;
 }
+
+/* ---- Game view (the "Game" tab; the game itself is an iframe placed over #game-view-slot by viewport/GameView.js) ---- */
+.game-toolbar{gap:6px;}
+.game-aspect-select{background:#2a2a2a;color:#ddd;border:1px solid #202020;border-radius:2px;height:16px;font-size:10px;padding:0 4px;max-width:190px;}
+.game-aspect-select:hover{border-color:#444;}
+.game-toolbar-spacer{flex:1;}
+.game-tool-btn{display:flex;align-items:center;gap:4px;height:16px;padding:0 8px;font-size:10px;color:#ccc;background:#2a2a2a;border:1px solid #202020;border-radius:2px;}
+.game-tool-btn:hover{background:#383838;color:#fff;}
+.game-status{font-size:10px;padding:0 6px;border-radius:8px;}
+.game-status.live{color:#7fd48f;}
+.game-status.paused{color:#feca57;}
+.game-view{background:#161616;}
+.game-view-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#777;font-size:12px;text-align:center;padding:16px;-webkit-user-select:none;user-select:none;}
+.game-tab-live{width:6px;height:6px;border-radius:50%;background:#7fd48f;display:inline-block;margin-left:2px;}

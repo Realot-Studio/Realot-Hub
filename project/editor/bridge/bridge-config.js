@@ -3,7 +3,7 @@
  *
  * DEFAULT_RELAY_URL  The shared relay every user connects through. Users only
  *                    press AI → copy the link into their AI app → Connect.
- *                    (Deploy your own copy from /relay; see relay/README.md.)
+ *                    (Users can deploy their own copy from the realot-bridge repo.)
  *
  * AI_MINUTES_PER_DAY How many minutes the AI may actively work on a project
  *                    per 24 hours while using the shared relay. Time only
@@ -15,12 +15,12 @@
  *                    count as "working" (the AI is thinking). Longer pauses
  *                    are free.
  *
- * RELAY_REPO_URL     GitHub address of this engine (e.g.
- *                    "https://github.com/yourname/Realot-Studio"). Powers the
- *                    "host the relay yourself" button. Leave empty to let users
- *                    type it in.
+ * RELAY_REPO_URL     GitHub address of the PUBLIC relay repository (the relay files
+ *                    sit at the repo root, with wrangler.toml). Powers the
+ *                    "host the relay yourself" button. The engine repo itself can
+ *                    stay private. Leave empty to let users type an address in.
  */
 export const DEFAULT_RELAY_URL = "https://realot-bridge.realot.workers.dev";
 export const AI_MINUTES_PER_DAY = 30;
 export const AI_IDLE_GRACE_SECONDS = 20;
-export const RELAY_REPO_URL = "https://github.com/Realot-Studio/Realot-Hub";
+export const RELAY_REPO_URL = "https://github.com/Realot-Studio/realot-bridge";

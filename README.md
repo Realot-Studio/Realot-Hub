@@ -77,3 +77,7 @@ Details and safety notes: `relay/README.md`.
 ## Object pooling
 
 See the engine documentation site: https://realot-studio-documentation.pages.dev/
+
+## License
+
+The source is available to read, download and run locally, but it is not open source. You may not publish, host, sell or redistribute the engine, use it as the base for another engine, or claim it as yours. Games you make with it are yours. Third-party licenses must be kept (see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)). Full terms: [LICENSE](LICENSE).
