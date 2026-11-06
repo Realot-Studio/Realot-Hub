@@ -31,5 +31,3 @@ Realot; they only set the icon and file type name.
 - **Linux (GNOME/KDE):** run `./install-linux.sh`. Registers the
   `application/x-realot-project` type and its icon.
 
-I could not test these two on real Windows/Linux desktops here; treat them as
-a starting point.
