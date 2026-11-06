@@ -153,10 +153,9 @@
         .secure { margin-top: 12px; text-align: center; font-size: 13px; color: var(--text-dim); }
 
 
-        /* Cash App QR (shown only for Cash App). White frame = the quiet zone scanners need. */
-        .qr { display: none; flex-direction: column; align-items: center; gap: 10px; margin-top: 22px; }
-        body[data-method="cashapp"] .qr { display: flex; }
-        .qr-frame { padding: 14px; border-radius: 18px; background: #fff; box-shadow: 0 10px 34px rgba(0,200,83,.28); line-height: 0; }
+        /* QR code for the chosen method. The white frame is the quiet zone scanners need. */
+        .qr { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 22px; }
+        .qr-frame { padding: 14px; border-radius: 18px; background: #fff; box-shadow: 0 10px 34px var(--brand-glow); line-height: 0; transition: box-shadow .25s; }
         .qr-frame img { width: 200px; height: 200px; image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
         .qr-note { font-size: 13px; color: var(--text-dim); text-align: center; }
 
@@ -233,15 +232,15 @@
             <p class="hint" id="hint" aria-live="polite"></p>
         </section>
 
-        <a class="cta" id="cta" href="https://paypal.me/RealotStudio/5USD" target="_blank" rel="noopener noreferrer">
+        <a class="cta" id="cta" href="https://www.paypal.com/paypalme/VaelisStudio/5USD" target="_blank" rel="noopener noreferrer">
             <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
             <span id="ctaText">Donate $5 with PayPal</span>
         </a>
         <p class="secure" id="secure">You'll finish on PayPal's own secure site. Nothing is collected on this page.</p>
 
         <div class="qr">
-            <div class="qr-frame"><img src="cashapp-qr.png" width="200" height="200" alt="QR code for the RealotStudio Cash App page" loading="lazy"></div>
-            <p class="qr-note">On your phone? Scan this with your camera or the Cash App.<br>The amount is chosen in the app.</p>
+            <div class="qr-frame"><img id="qrImg" src="paypal-qr.png" width="200" height="200" alt="QR code for our PayPal page"></div>
+            <p class="qr-note" id="qrNote">On your phone? Scan this with your camera to open PayPal.<br>You choose the amount there.</p>
         </div>
 
         <div class="tag-row">
@@ -260,7 +259,7 @@
     <p class="thanks"><strong>Thank you</strong> for being part of Realot Studio. Whether you give, share it, or just make something cool with it, it means a lot.</p>
 
     <noscript><p class="thanks">Enable JavaScript to pick an amount, or go straight to
-        <a href="https://paypal.me/RealotStudio">PayPal</a> or <a href="https://cash.app/$RealotStudio">Cash App</a>.</p></noscript>
+        <a href="https://www.paypal.com/paypalme/VaelisStudio">PayPal</a> or <a href="https://cash.app/$RealotStudio">Cash App</a>.</p></noscript>
 </div>
 
 <script>
@@ -268,7 +267,7 @@
     "use strict";
 
     /* PURE:start  (link building + amount checking; has no page access, so it can be tested on its own) */
-    var PAYPAL_USER = "RealotStudio";
+    var PAYPAL_USER = "VaelisStudio";
     var CASH_TAG = "$RealotStudio";
     var MIN_AMOUNT = 1;
     var MAX_AMOUNT = 10000;
@@ -293,7 +292,7 @@
         if (method === "cashapp") {
             return "https://cash.app/" + CASH_TAG + (amount == null ? "" : "/" + formatAmount(amount));
         }
-        return "https://paypal.me/" + PAYPAL_USER + (amount == null ? "" : "/" + formatAmount(amount) + "USD");
+        return "https://www.paypal.com/paypalme/" + PAYPAL_USER + (amount == null ? "" : "/" + formatAmount(amount) + "USD");
     }
     /* PURE:end */
 
@@ -306,6 +305,11 @@
         { v: 100, c: "Legend" }
     ];
     var NAMES = { paypal: "PayPal", cashapp: "Cash App" };
+    var QR_IMAGES = { paypal: "paypal-qr.png", cashapp: "cashapp-qr.png" };
+    var QR_NOTES = {
+        paypal: "On your phone? Scan this with your camera to open PayPal.<br>You choose the amount there.",
+        cashapp: "On your phone? Scan this with your camera or the Cash App.<br>You choose the amount in the app."
+    };
 
     var state = { method: "paypal", preset: 5, custom: false, customText: "" };
 
@@ -318,6 +322,8 @@
     var cta = document.getElementById("cta");
     var ctaText = document.getElementById("ctaText");
     var secure = document.getElementById("secure");
+    var qrImg = document.getElementById("qrImg");
+    var qrNote = document.getElementById("qrNote");
     var methodBtns = Array.prototype.slice.call(document.querySelectorAll(".method"));
     var chipBtns = [];
 
@@ -376,6 +382,10 @@
             cta.href = buildLink(state.method, amount);
             ctaText.textContent = amount == null ? "Continue to " + name : "Donate $" + formatAmount(amount) + " with " + name;
         }
+        // The QR code follows the chosen method (only touch the image when it changes, so it doesn't flicker).
+        if (qrImg.getAttribute("src") !== QR_IMAGES[state.method]) qrImg.setAttribute("src", QR_IMAGES[state.method]);
+        qrImg.alt = "QR code for our " + name + " page";
+        qrNote.innerHTML = QR_NOTES[state.method];
         secure.textContent = "You'll finish on " + name + "'s own secure site. Nothing is collected on this page.";
     }
 
