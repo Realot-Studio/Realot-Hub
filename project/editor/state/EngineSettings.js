@@ -46,6 +46,7 @@ function _defaults() {
     // and are NOT gated by this — see Inspector.js's static-body-note
     // vs static-body-warning split.
     showComponentNotes: false,
+    editorLightsOff: false, // Scene view only: don't render lights/shadows while editing (Play and exports are never affected)
   };
 }
 
@@ -72,6 +73,7 @@ export function getEngineSettings() {
           backgroundRendering: typeof parsed.backgroundRendering === "boolean" ? parsed.backgroundRendering : d.backgroundRendering,
           vsync: typeof parsed.vsync === "boolean" ? parsed.vsync : d.vsync,
           showComponentNotes: typeof parsed.showComponentNotes === "boolean" ? parsed.showComponentNotes : d.showComponentNotes,
+          editorLightsOff: typeof parsed.editorLightsOff === "boolean" ? parsed.editorLightsOff : d.editorLightsOff,
         };
       }
     }

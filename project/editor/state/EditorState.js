@@ -8,6 +8,12 @@
  */
 
 import { loadPanelVisibility } from "./PanelVisibility.js";
+import { getEngineSettings } from "./EngineSettings.js";
+
+/** Saved "lights off while editing" choice (see the light bulb button in Toolbar.js). */
+function _savedLightsOff() {
+  try { return !!getEngineSettings().editorLightsOff; } catch (_) { return false; }
+}
 
 export const editorState = {
   /** Window menu: which big panels are shown (hierarchy / assets / inspector).
@@ -160,6 +166,12 @@ export const editorState = {
    *  default so a scene with a large baked grid doesn't suddenly cover
    *  the viewport the first time this feature is used. */
   showNavWorld: false,
+  /** Scene-view performance switch (the light bulb button in Toolbar.js, only shown
+   *  once the scene has a Light). true = the Scene view skips ALL light and shadow
+   *  rendering so editing a heavily lit scene stays smooth. Editor-only: it is saved
+   *  as an editor setting, never in the project, and Play / exported games always
+   *  render lights and shadows normally. */
+  editorLightsOff: _savedLightsOff(),
   /** "bounds" is the cheap NavWorld2D size gizmo; "cells" is the optional
    * detailed grid visualization. The editor defaults to bounds so a huge
    * open-world bake never tanks viewport performance just because a

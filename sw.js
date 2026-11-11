@@ -14,7 +14,7 @@
  *   /project/player/play -> /project/player/play.html
  */
 
-const CACHE_NAME = "realot-offline-v35";
+const CACHE_NAME = "realot-offline-v36";
 const MANIFEST_URL = "/offline-manifest.json";
 
 // Pages that must exist in the cache for the app to be installable/offline.

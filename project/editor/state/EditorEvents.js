@@ -62,7 +62,7 @@ import {
   importGifFrames,
 } from "../animation/AnimationImport.js";
 import { importSpriteFiles, getSpriteAsset, importAudioFiles, registerSpriteAsset, registerTileAsset, deleteSpriteAsset, deleteAudioAsset } from "../../runtime/assets/AssetRegistry.js";
-import { syncBackgroundColorLive, switchScene, syncAfterExternalSceneChange } from "../viewport/SceneViewport.js";
+import { syncBackgroundColorLive, switchScene, syncAfterExternalSceneChange, requestSceneViewportRedraw } from "../viewport/SceneViewport.js";
 import { setPlayWindowPaused } from "../viewport/PlayWindow.js";
 import { serializeEntity, instantiateEntity } from "../../runtime/scene/SceneSerializer.js";
 import { SCRIPT, Script } from "../../runtime/components/Script.js";
@@ -1311,6 +1311,15 @@ let _lastSceneClick = { id: null, time: 0 };
           snapshotNow("scene");
           entity.active = !entity.active;
         }
+        render();
+        break;
+      }
+      // Light bulb button: stop/start drawing lights and shadows in the Scene view
+      // (a performance switch for editing; Play and exports are never affected).
+      case "toggle-editor-lights": {
+        editorState.editorLightsOff = !editorState.editorLightsOff;
+        setEngineSettings({ editorLightsOff: editorState.editorLightsOff });
+        requestSceneViewportRedraw();
         render();
         break;
       }

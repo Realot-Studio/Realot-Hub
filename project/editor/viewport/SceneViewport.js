@@ -116,6 +116,11 @@ let _multiDragSnapshots = [];
  */
 let _boxSelectState = null;
 let _markViewportDirty = null;
+
+/** Asks the Scene view to redraw on its next frame (it idles when nothing changed). */
+export function requestSceneViewportRedraw() {
+  if (_markViewportDirty) _markViewportDirty();
+}
 let _pixiInitFailed = false; // set true when no renderer is available; stops retrying
 
 /**
@@ -651,6 +656,7 @@ function createViewport(mount, render) {
 
     if (lightingSystem && editorState.world) {
       try {
+        lightingSystem.suspended = !!editorState.editorLightsOff; // light bulb button
         lightingSystem.update(editorState.world, 0);
       } catch (err) {
         pushLog("error", "Lighting sync failed: " + (err && err.message ? err.message : err));
@@ -1935,7 +1941,9 @@ export function captureProjectThumbnail(maxWidth = 480) {
     stage.scale.set(fit);
     stage.x = sw / 2 - (rect.left + rect.width / 2) * fit;
     stage.y = sh / 2 - (rect.top + rect.height / 2) * fit;
-    if (lightingSystem) lightingSystem.update(editorState.world, 0);
+    // The saved thumbnail should always show the lit scene, even while the light
+    // bulb button has lights turned off for editing.
+    if (lightingSystem) { lightingSystem.suspended = false; lightingSystem.update(editorState.world, 0); }
     renderer.render(stage);
 
     const res = renderer.resolution || 1;
@@ -1956,7 +1964,12 @@ export function captureProjectThumbnail(maxWidth = 480) {
     stage.scale.set(saved.sx, saved.sy);
     stage.x = saved.x;
     stage.y = saved.y;
-    try { if (lightingSystem) lightingSystem.update(editorState.world, 0); } catch (e) { /* ignore */ }
+    try {
+      if (lightingSystem) {
+        lightingSystem.suspended = !!editorState.editorLightsOff; // back to the user's choice
+        lightingSystem.update(editorState.world, 0);
+      }
+    } catch (e) { /* ignore */ }
     if (_markViewportDirty) _markViewportDirty();
   }
   return url;

@@ -129,6 +129,14 @@ export class LightingSystem extends System {
 
     this._filterBroken = false;
 
+    // Editor-only pause switch: while true, update() renders no lights, shadows or
+    // glow and removes every light filter from the sprites, so the scene draws
+    // unlit and the GPU does none of the lighting work. Only the editor's Scene
+    // view ever sets it (the "light bulb" toolbar button); a running game never
+    // does, so lights and shadows always render in Play and in exports.
+    this.suspended = false;
+    this._suspendApplied = false;
+
     // Throttle state for the over-budget light/occluder warnings in
     // update() below — see that method's own comment for why these
     // exist (unthrottled console.warn every frame is a real perf cost
@@ -291,6 +299,15 @@ export class LightingSystem extends System {
   }
 
   update(world) {
+    if (this.suspended) {
+      if (!this._suspendApplied) {
+        this._teardownAllSpriteFilters(); // also hides the glow overlay
+        this._suspendApplied = true;
+      }
+      return;
+    }
+    this._suspendApplied = false;
+
     if (this._filterBroken || !this._lightTextureFilter || !this.pixiApp || !this.pixiApp.renderer) {
       this._teardownAllSpriteFilters();
       return;

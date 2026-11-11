@@ -15,7 +15,7 @@
 import { getAiBridgeStatus } from "../bridge/AiBridge.js";
 import { icon } from "../icons/IconLibrary.js";
 import { editorState, dirtyState } from "../state/EditorState.js";
-import { LightType } from "../../runtime/components/Light.js";
+import { LIGHT, LightType } from "../../runtime/components/Light.js";
 import { TILEMAP } from "../../runtime/components/Tilemap.js";
 import { TILESET } from "../../runtime/components/Tileset.js";
 import { NAV_WORLD_2D } from "../../runtime/components/NavWorld2D.js";
@@ -71,6 +71,9 @@ export function renderToolbar() {
   const hasTileset = !!world && world.query(TILESET).length > 0;
   const hasNavWorld = !!world && world.query(NAV_WORLD_2D).length > 0;
   const hasStrokePath = !!world && world.query(STROKE_PATH).length > 0;
+  // The light bulb button only appears once the scene has a Light (same "hidden until relevant" idea as the nav buttons).
+  const hasLight = !!world && world.query(LIGHT).length > 0;
+  const lightsOff = !!editorState.editorLightsOff;
 
   const tools = [
     { id: "pan", iconName: "hand", shortcut: "Q" },
@@ -117,6 +120,16 @@ export function renderToolbar() {
       )
       .join("") +
     "</div>" +
+    (hasLight ? (
+      '<div class="tool-group lights-group" style="margin-left:4px;">' +
+        '<button class="tool-btn lights-toggle' + (lightsOff ? " lights-off" : " active") +
+        '" data-action="toggle-editor-lights" aria-pressed="' + (lightsOff ? "false" : "true") +
+        '" title="' + (lightsOff
+          ? "Lights and shadows are OFF in the Scene view (saves performance). Click to turn them back on. Play always shows them."
+          : "Lights and shadows are ON in the Scene view. Click to turn them off while editing to save performance. Play always shows them.") +
+        '">' + icon("lightbulb", 13) + "</button>" +
+      "</div>"
+    ) : "") +
     (hasNavWorld ? (
       '<div class="tool-group nav-display-group" style="gap:2px;margin-left:4px;">' +
         '<button class="tool-btn' + (editorState.navWorldViewMode === "bounds" ? " active" : "") +
