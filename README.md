@@ -21,11 +21,13 @@ Open `http://localhost:5000/` and choose **Open Editor**.
 
 The editor builds an HTML5 or PWA game ZIP in the browser, then sends that ZIP
 to the Android build API. The service URL and API key are set in
-`project/editor/state/ApkBuildConfig.js` (`APK_SERVICE_URL`, `APK_API_KEY`);
-edit that file to rotate the key. If no key is set, the editor falls back to
-requesting a temporary bearer key automatically. These keys expire after 48 hours. Key issuance is public
-self-service, not user authentication; anyone who can reach the service can
-request a temporary key.
+`project/editor/state/ApkBuildConfig.js`. The permanent service key is **not** in
+the editor: it is a secret (`APK_API_KEY`) in the Realot Worker, which the editor
+reaches through the address in `js/data/hub-config.js`. To rotate the key run
+`npx wrangler secret put APK_API_KEY` in the Worker folder. If no Worker address is
+set, the editor falls back to requesting a temporary bearer key automatically.
+These keys expire after 48 hours. Key issuance is public self-service, not user
+authentication; anyone who can reach the service can request a temporary key.
 
 ```text
 POST /api/v1/build?name=<url-encoded-game-title>

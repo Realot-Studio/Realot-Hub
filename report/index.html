@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <title>Report a bug | Realot Studio</title>
+    <meta name="theme-color" content="#161616">
+
+    <link rel="icon" href="../favicon.svg?v=4" type="image/svg+xml" sizes="any">
+    <link rel="icon" href="../favicon.ico?v=4" sizes="16x16 32x32 48x48">
+    <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png?v=4">
+    <link href="../css/fonts/fonts.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/tokens.css">
+
+    <style>
+        /* Report page. Standalone, but uses the hub's colour tokens so it feels like the same product. */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { --card: rgba(43, 43, 43, 0.72); --edge: rgba(255, 255, 255, 0.09); --pad: clamp(16px, 4vw, 28px); --ok: #5ac17a; }
+        html { -webkit-text-size-adjust: 100%; }
+        body { min-height: 100vh; background: #121212; color: var(--text-main); font-family: Inter, var(--font-ui); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: hidden; position: relative; }
+        body::before, body::after { content: ""; position: fixed; z-index: 0; pointer-events: none; width: 70vmax; height: 70vmax; border-radius: 50%; filter: blur(90px); opacity: .5; }
+        body::before { top: -36vmax; left: -26vmax; background: radial-gradient(circle, rgba(58,114,176,.55), transparent 65%); }
+        body::after  { bottom: -40vmax; right: -28vmax; background: radial-gradient(circle, rgba(224,105,98,.32), transparent 65%); }
+        a { color: inherit; }
+        button, input, textarea { font: inherit; color: inherit; }
+        button { background: none; border: 0; cursor: pointer; }
+        :focus-visible { outline: 2px solid var(--accent-bright); outline-offset: 3px; border-radius: 8px; }
+        .wrap { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: var(--pad); padding-bottom: 56px; }
+        .back { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 18px; color: var(--text-muted); text-decoration: none; font-size: 14px; padding: 6px 10px 6px 6px; border-radius: 8px; transition: color .15s, background .15s; }
+        .back:hover { color: #fff; background: rgba(255,255,255,.06); }
+
+        .hero { text-align: center; padding: 8px 0 24px; }
+        .badge { width: 68px; height: 68px; margin: 0 auto 16px; border-radius: 22px; display: grid; place-items: center; background: linear-gradient(145deg, rgba(91,155,213,.28), rgba(91,155,213,.07)); border: 1px solid rgba(91,155,213,.35); box-shadow: 0 10px 38px rgba(58,114,176,.3); }
+        .badge svg { width: 32px; height: 32px; stroke: var(--accent-bright); }
+        h1 { font-size: clamp(26px, 5.5vw, 36px); line-height: 1.15; font-weight: 700; letter-spacing: -.02em; }
+        .lead { max-width: 480px; margin: 12px auto 0; color: var(--text-muted); font-size: clamp(15px, 2.4vw, 16.5px); }
+
+        .panel { background: var(--card); border: 1px solid var(--edge); border-radius: 20px; padding: clamp(18px, 4vw, 28px); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 24px 70px rgba(0,0,0,.45); }
+        .field + .field { margin-top: 22px; }
+        .label { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 9px; font-size: 13px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--text-dim); }
+        .label small { font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--text-faint); }
+
+        .cats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .cat { padding: 13px 12px; border-radius: 14px; text-align: left; border: 1.5px solid var(--edge); background: rgba(255,255,255,.03); transition: border-color .18s, background .18s, box-shadow .18s, transform .12s; }
+        .cat:hover { background: rgba(255,255,255,.06); }
+        .cat:active { transform: scale(.985); }
+        .cat[aria-pressed="true"] { border-color: var(--accent-line); background: var(--accent-soft); box-shadow: 0 0 0 4px var(--accent-soft); }
+        .cat .t { display: block; font-weight: 600; font-size: 15px; }
+        .cat .d { display: block; margin-top: 2px; font-size: 12.5px; color: var(--text-dim); line-height: 1.35; }
+
+        textarea, .input { width: 100%; background: rgba(0,0,0,.28); border: 1.5px solid var(--edge); border-radius: 14px; padding: 13px 15px; outline: 0; transition: border-color .15s, box-shadow .15s; }
+        textarea { min-height: 150px; resize: vertical; line-height: 1.5; }
+        textarea:focus, .input:focus { border-color: var(--accent-line); box-shadow: 0 0 0 4px var(--accent-soft); }
+        ::placeholder { color: var(--text-faint); }
+        .count { margin-top: 6px; text-align: right; font-size: 12px; color: var(--text-faint); }
+        .count.warn { color: #feca57; }
+
+        .drop { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; padding: 22px 16px; border-radius: 14px; border: 1.5px dashed rgba(255,255,255,.18); background: rgba(255,255,255,.02); cursor: pointer; transition: border-color .15s, background .15s; }
+        .drop:hover, .drop.over { border-color: var(--accent-line); background: var(--accent-soft); }
+        .drop svg { width: 26px; height: 26px; stroke: var(--text-dim); margin-bottom: 2px; }
+        .drop b { font-size: 15px; }
+        .drop span { font-size: 13px; color: var(--text-dim); }
+        .drop input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .drop[hidden] { display: none; }
+
+        .file { display: flex; align-items: center; gap: 14px; padding: 10px; border-radius: 14px; background: rgba(0,0,0,.25); border: 1.5px solid var(--edge); }
+        .file[hidden] { display: none; }
+        .file .thumb { flex: none; width: 96px; height: 72px; border-radius: 10px; overflow: hidden; background: #000; display: grid; place-items: center; }
+        .file .thumb img, .file .thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .file .meta { flex: 1; min-width: 0; }
+        .file .name { font-weight: 600; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file .size { font-size: 12.5px; color: var(--text-dim); }
+        .file .rm { flex: none; width: 34px; height: 34px; border-radius: 10px; color: var(--text-muted); font-size: 20px; line-height: 1; }
+        .file .rm:hover { background: rgba(224,105,98,.16); color: var(--danger); }
+        .problem { margin-top: 8px; font-size: 13.5px; color: var(--danger); min-height: 0; }
+        .problem:empty { display: none; }
+
+        .check { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--text-muted); cursor: pointer; }
+        .check input { margin-top: 4px; width: 16px; height: 16px; accent-color: var(--accent-hover); flex: none; }
+        .check small { display: block; color: var(--text-faint); font-size: 12.5px; }
+
+        .send { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; margin-top: 26px; padding: 16px 20px; border-radius: 16px; font-size: 17px; font-weight: 700; color: #fff; background: linear-gradient(135deg, var(--accent-hover), var(--accent)); box-shadow: 0 12px 32px rgba(58,114,176,.4); transition: transform .15s, box-shadow .2s, filter .2s, opacity .2s; }
+        .send:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
+        .send:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
+        .progress { height: 6px; margin-top: 12px; border-radius: 3px; background: rgba(255,255,255,.08); overflow: hidden; }
+        .progress[hidden] { display: none; }
+        .progress i { display: block; height: 100%; width: 0; background: var(--accent-bright); transition: width .15s linear; }
+        .status { margin-top: 12px; font-size: 14px; text-align: center; color: var(--text-muted); min-height: 1.4em; }
+        .status.bad { color: var(--danger); }
+        .banner { margin-bottom: 18px; padding: 12px 14px; border-radius: 12px; background: rgba(254,202,87,.1); border: 1px solid rgba(254,202,87,.35); color: #f3d98a; font-size: 14px; }
+        .banner[hidden] { display: none; }
+        .fineprint { margin-top: 14px; text-align: center; font-size: 12.5px; color: var(--text-faint); }
+        .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+        .done { text-align: center; padding: 18px 4px 6px; }
+        .done[hidden], form[hidden] { display: none; }
+        .done .ok { width: 72px; height: 72px; margin: 0 auto 16px; border-radius: 50%; display: grid; place-items: center; background: rgba(90,193,122,.16); border: 1px solid rgba(90,193,122,.4); }
+        .done .ok svg { width: 34px; height: 34px; stroke: var(--ok); }
+        .done h2 { font-size: 24px; }
+        .done p { margin-top: 8px; color: var(--text-muted); }
+        .done .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
+        .btn2 { padding: 11px 20px; border-radius: 12px; font-weight: 600; font-size: 15px; background: rgba(255,255,255,.07); border: 1px solid var(--edge); text-decoration: none; display: inline-block; }
+        .btn2:hover { background: rgba(255,255,255,.12); }
+        @media (max-width: 560px) { .cats { grid-template-columns: 1fr; } .file .thumb { width: 72px; height: 56px; } }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <a class="back" href="../">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Back to Realot Studio
+    </a>
+
+    <header class="hero">
+        <div class="badge" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
+        </div>
+        <h1>Report a bug or share an idea</h1>
+        <p class="lead">Something broken, confusing or missing? Tell us. A screenshot or a short clip makes it much easier to fix.</p>
+    </header>
+
+    <main class="panel">
+        <div class="banner" id="notSetUp" hidden>Reporting isn't set up on this site yet, so nothing can be sent right now. Please check back later.</div>
+
+        <form id="form" novalidate autocomplete="off">
+            <div class="field">
+                <p class="label">What is this about?</p>
+                <div class="cats" role="group" aria-label="Type of report" id="cats">
+                    <button type="button" class="cat" data-cat="bug" aria-pressed="true"><span class="t">Bug</span><span class="d">Something isn't working</span></button>
+                    <button type="button" class="cat" data-cat="improvement" aria-pressed="false"><span class="t">Improvement</span><span class="d">Make something better</span></button>
+                    <button type="button" class="cat" data-cat="engine_feature" aria-pressed="false"><span class="t">Feature idea</span><span class="d">Something new for the engine</span></button>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label" for="message"><span>Details</span><small id="msgHelp">What happened? What did you expect?</small></label>
+                <textarea id="message" maxlength="9000" placeholder="Describe it here. For a bug, the steps to make it happen again help a lot."></textarea>
+                <div class="count" id="count">0 / 9,000</div>
+            </div>
+
+            <div class="field">
+                <p class="label"><span>Screenshot or video</span><small>optional, one file</small></p>
+                <label class="drop" id="drop">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
+                    <b>Drop a file here, click to browse, or paste</b>
+                    <span>Images up to 10 MB (JPG, PNG, WebP, GIF) · videos up to 25 MB (MP4, WebM)</span>
+                    <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm">
+                </label>
+                <div class="file" id="fileCard" hidden>
+                    <div class="thumb" id="thumb"></div>
+                    <div class="meta"><div class="name" id="fileName"></div><div class="size" id="fileSize"></div></div>
+                    <button type="button" class="rm" id="removeFile" aria-label="Remove file" title="Remove">&times;</button>
+                </div>
+                <p class="problem" id="fileProblem" role="alert"></p>
+            </div>
+
+            <div class="field">
+                <label class="label" for="contact"><span>Contact</span><small>optional, only if you'd like a reply</small></label>
+                <input class="input" id="contact" type="text" maxlength="200" placeholder="Email or Discord name">
+            </div>
+
+            <div class="field">
+                <label class="check"><input type="checkbox" id="includeInfo" checked>
+                    <span>Include technical details<small>Browser, screen size and engine version. Helps us reproduce bugs. Nothing else is collected.</small></span></label>
+            </div>
+
+            <div class="hp" aria-hidden="true"><label>Website <input type="text" id="website" tabindex="-1" autocomplete="off"></label></div>
+
+            <button type="submit" class="send" id="send"><span id="sendText">Send report</span></button>
+            <div class="progress" id="progress" hidden><i id="bar"></i></div>
+            <p class="status" id="status" role="status" aria-live="polite"></p>
+        </form>
+
+        <section class="done" id="done" hidden>
+            <div class="ok" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <h2>Thank you!</h2>
+            <p>Your report was sent. We read every one.</p>
+            <div class="row"><button type="button" class="btn2" id="again">Send another</button><a class="btn2" href="../">Back to Realot Studio</a></div>
+        </section>
+    </main>
+    <p class="fineprint">Reports are private and only seen by the developer.</p>
+</div>
+
+<script src="../js/data/hub-config.js"></script>
+<script src="../js/data/EngineVersion.js"></script>
+<script>
+(function () {
+    "use strict";
+
+    var API = String((window.RealotHubConfig && window.RealotHubConfig.feedbackApiUrl) || "").replace(/\/+$/, "");
+    var MB = 1024 * 1024;
+    var KIND = { "image/jpeg": "image", "image/png": "image", "image/webp": "image", "image/gif": "image", "video/mp4": "video", "video/webm": "video" };
+    var BY_EXT = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif", mp4: "video/mp4", webm: "video/webm" };
+    var LIMIT = { image: 10 * MB, video: 25 * MB };
+    var HELP = {
+        bug: "What happened? What did you expect?",
+        improvement: "What could be better, and how?",
+        engine_feature: "What would you like the engine to do?"
+    };
+    var ERRORS = {
+        too_large: "That file is too large. Images can be up to 10 MB and videos up to 25 MB.",
+        file_too_large: "That file is too large. Images can be up to 10 MB and videos up to 25 MB.",
+        bad_file_type: "That file type isn't supported. Use JPG, PNG, WebP, GIF, MP4 or WebM.",
+        slow_down: "You've sent a few reports recently. Please wait a few minutes and try again.",
+        message_too_long: "Your message is too long. Please shorten it a little.",
+        empty: "Please write a few words or attach a screenshot or video.",
+        not_configured: "Reporting isn't available right now. Please try again later.",
+        origin_not_allowed: "Reporting isn't available from this address."
+    };
+
+    function $(id) { return document.getElementById(id); }
+    var els = {
+        form: $("form"), cats: $("cats"), msg: $("message"), count: $("count"), help: $("msgHelp"),
+        drop: $("drop"), input: $("fileInput"), card: $("fileCard"), thumb: $("thumb"), fname: $("fileName"), fsize: $("fileSize"),
+        rm: $("removeFile"), problem: $("fileProblem"), contact: $("contact"), info: $("includeInfo"), hp: $("website"),
+        send: $("send"), sendText: $("sendText"), progress: $("progress"), bar: $("bar"), status: $("status"),
+        done: $("done"), again: $("again"), banner: $("notSetUp")
+    };
+    var state = { category: "bug", file: null, previewUrl: null, sending: false, sent: false };
+
+    if (!API) { els.banner.hidden = false; els.send.disabled = true; }
+
+    /* ---- category ---- */
+    els.cats.addEventListener("click", function (e) {
+        var b = e.target.closest(".cat");
+        if (!b) return;
+        state.category = b.getAttribute("data-cat");
+        Array.prototype.forEach.call(els.cats.querySelectorAll(".cat"), function (c) { c.setAttribute("aria-pressed", String(c === b)); });
+        els.help.textContent = HELP[state.category];
+    });
+
+    /* ---- message counter ---- */
+    function updateCount() {
+        var n = els.msg.value.length;
+        els.count.textContent = n.toLocaleString("en-US") + " / 9,000";
+        els.count.classList.toggle("warn", n > 8500);
+    }
+    els.msg.addEventListener("input", updateCount);
+
+    /* ---- attachment ---- */
+    function typeOf(file) {
+        if (KIND[file.type]) return file.type;
+        var m = /\.([a-z0-9]+)$/i.exec(file.name || "");
+        return m ? (BY_EXT[m[1].toLowerCase()] || "") : "";
+    }
+    function size(n) { return n >= MB ? (n / MB).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB"; }
+
+    function problemWith(file) {
+        var type = typeOf(file);
+        if (!type) return "That file type isn't supported. Use JPG, PNG, WebP, GIF, MP4 or WebM.";
+        var kind = KIND[type];
+        if (file.size === 0) return "That file is empty.";
+        if (file.size > LIMIT[kind]) {
+            return "That " + kind + " is " + size(file.size) + ". " + (kind === "image" ? "Images" : "Videos") + " can be up to " + (LIMIT[kind] / MB) + " MB." +
+                (kind === "video" ? " Try trimming the clip or lowering its resolution." : "");
+        }
+        return "";
+    }
+
+    function clearFile() {
+        if (state.previewUrl) { URL.revokeObjectURL(state.previewUrl); state.previewUrl = null; }
+        state.file = null;
+        els.thumb.textContent = "";
+        els.card.hidden = true;
+        els.drop.hidden = false;
+        els.input.value = "";
+    }
+
+    function setFile(file) {
+        var bad = problemWith(file);
+        els.problem.textContent = bad;
+        if (bad) return;
+        clearFile();
+        state.file = file;
+        var kind = KIND[typeOf(file)];
+        state.previewUrl = URL.createObjectURL(file);
+        var node = document.createElement(kind === "image" ? "img" : "video");
+        node.src = state.previewUrl;
+        if (kind === "image") node.alt = "Preview of the attached image";
+        else { node.muted = true; node.preload = "metadata"; node.playsInline = true; }
+        els.thumb.appendChild(node);
+        els.fname.textContent = file.name || (kind === "image" ? "Pasted image" : "Video");
+        els.fsize.textContent = (kind === "image" ? "Image" : "Video") + " · " + size(file.size);
+        els.card.hidden = false;
+        els.drop.hidden = true;
+    }
+
+    els.input.addEventListener("change", function () { if (els.input.files && els.input.files[0]) setFile(els.input.files[0]); });
+    els.rm.addEventListener("click", function () { clearFile(); els.problem.textContent = ""; });
+    ["dragenter", "dragover"].forEach(function (t) { els.drop.addEventListener(t, function (e) { e.preventDefault(); els.drop.classList.add("over"); }); });
+    ["dragleave", "drop"].forEach(function (t) { els.drop.addEventListener(t, function (e) { e.preventDefault(); els.drop.classList.remove("over"); }); });
+    els.drop.addEventListener("drop", function (e) {
+        var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) setFile(f);
+    });
+    // Ctrl+V a screenshot straight into the page.
+    document.addEventListener("paste", function (e) {
+        var files = e.clipboardData && e.clipboardData.files;
+        if (!files || !files.length) return;
+        var f = Array.prototype.filter.call(files, function (x) { return KIND[x.type]; })[0];
+        if (f) { e.preventDefault(); setFile(f); }
+    });
+    // Dropping a file anywhere else must not make the browser open it and lose the form.
+    ["dragover", "drop"].forEach(function (t) { window.addEventListener(t, function (e) { if (!els.drop.contains(e.target)) e.preventDefault(); }); });
+
+    /* ---- sending ---- */
+    function environment() {
+        var v = window.RealotVersion || "unknown";
+        var dpr = window.devicePixelRatio || 1;
+        return "Environment: Realot Studio " + v + " | " + String(navigator.userAgent || "").slice(0, 220) +
+            " | screen " + screen.width + "x" + screen.height + " @" + dpr + "x | " + (navigator.language || "?");
+    }
+
+    function composeMessage() {
+        var parts = [els.msg.value.trim()];
+        var contact = els.contact.value.trim().slice(0, 200);
+        if (contact) parts.push("Contact: " + contact);
+        if (els.info.checked) parts.push(environment());
+        return parts.filter(Boolean).join("\n\n---\n");
+    }
+
+    function setBusy(busy) {
+        state.sending = busy;
+        els.send.disabled = busy || !API;
+        els.sendText.textContent = busy ? "Sending\u2026" : "Send report";
+        els.progress.hidden = !busy;
+        if (!busy) els.bar.style.width = "0";
+    }
+    function say(text, bad) { els.status.textContent = text || ""; els.status.classList.toggle("bad", !!bad); }
+
+    els.form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        if (state.sending || !API) return;
+        var text = els.msg.value.trim();
+        if (text.length < 3 && !state.file) { say("Please write a few words or attach a screenshot or video.", true); els.msg.focus(); return; }
+
+        var data = new FormData();
+        data.append("category", state.category);
+        data.append("message", composeMessage());
+        data.append("website", els.hp.value);
+        if (state.file) data.append("media", state.file, state.file.name || "upload");
+
+        setBusy(true);
+        say("");
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", API + "/feedback");
+        xhr.timeout = 240000;
+        xhr.upload.onprogress = function (ev) {
+            if (ev.lengthComputable) els.bar.style.width = Math.round((ev.loaded / ev.total) * 100) + "%";
+        };
+        xhr.upload.onload = function () { els.bar.style.width = "100%"; say("Almost done\u2026"); };
+        xhr.onload = function () {
+            var body = null;
+            try { body = JSON.parse(xhr.responseText); } catch (err) { /* not JSON */ }
+            setBusy(false);
+            if (xhr.status === 200 && body && body.ok) { finish(); return; }
+            say((body && ERRORS[body.error]) || "Something went wrong and your report wasn't sent. Please try again in a moment.", true);
+        };
+        xhr.onerror = function () { setBusy(false); say("Couldn't reach the server. Check your connection and try again.", true); };
+        xhr.ontimeout = function () { setBusy(false); say("That took too long. Check your connection, or try a smaller file.", true); };
+        xhr.send(data);
+    });
+
+    function finish() {
+        state.sent = true;
+        say("");
+        els.form.hidden = true;
+        els.done.hidden = false;
+        window.scrollTo(0, 0);
+    }
+
+    els.again.addEventListener("click", function () {
+        els.msg.value = ""; els.contact.value = ""; updateCount(); clearFile(); els.problem.textContent = "";
+        state.sent = false;
+        els.done.hidden = true; els.form.hidden = false;
+        els.msg.focus();
+    });
+
+    // Don't lose a long report to an accidental tab close.
+    window.addEventListener("beforeunload", function (e) {
+        if (!state.sent && (els.msg.value.length > 30 || state.file)) { e.preventDefault(); e.returnValue = ""; }
+    });
+
+    updateCount();
+})();
+</script>
+</body>
+</html>

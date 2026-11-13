@@ -30,4 +30,5 @@
     window.RealotStore.subscribe(renderAll);
     if (window.RealotPWA) window.RealotPWA.subscribe(renderAll);
     renderAll();
+    if (window.RealotAnnouncements) window.RealotAnnouncements.init();
 })();

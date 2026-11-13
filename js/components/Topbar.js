@@ -38,6 +38,18 @@ window.RealotTopbar = {
             el('span', { html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>' }),
             'Donate'
         ]);
+        // Announcements bell (notes from the developer) and the bug report page.
+        // Both are optional extras: if the announcements script isn't loaded the bell just isn't shown.
+        const bugBtn = el('a', {
+            class: 'topbar-icon-btn',
+            href: 'report/',
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            title: 'Report a bug or share an idea',
+            'aria-label': 'Report a bug or share an idea'
+        }, [el('span', { html: '<svg data-lucide="bug"></svg>' })]);
+        if (window.RealotAnnouncements) right.append(window.RealotAnnouncements.createBell());
+        right.append(bugBtn);
         right.append(donateBtn);
 
         if (state.view === 'projects') {

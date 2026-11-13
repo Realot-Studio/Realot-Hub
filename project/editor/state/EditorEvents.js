@@ -2051,11 +2051,11 @@ let _lastSceneClick = { id: null, time: 0 };
                         }
                         if (response.status === 404) {
                           message =
-                            "The Android build service could not be found (404). Check APK_SERVICE_URL in " +
-                            "ApkBuildConfig.js and that it exposes POST /api/v1/build.";
+                            "The Android build service could not be found (404). Check the Worker address in " +
+                            "js/data/hub-config.js and that the Worker is deployed.";
                         }
                         if (response.status === 401 || response.status === 403) {
-                          message = "The Android build service rejected the request: missing, wrong or disabled API key. Update APK_API_KEY in ApkBuildConfig.js.";
+                          message = "The Android build service rejected the request: the APK_API_KEY secret in the Worker is missing, wrong or disabled. Update it with: npx wrangler secret put APK_API_KEY";
                         }
                         if (response.status === 429) {
                           message = "Too many Android export requests. Wait a bit and try again.";
