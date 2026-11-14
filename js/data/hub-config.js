@@ -15,5 +15,5 @@
  * the key belongs in the Worker as a secret.
  */
 window.RealotHubConfig = {
-    feedbackApiUrl: "https://realot-worker.ethanbanyam.workers.dev/"
+    feedbackApiUrl: "https://realot-worker.ethanbanyam.workers.dev"
 };
