@@ -189,7 +189,9 @@
 (function () {
     "use strict";
 
-    var API = String((window.RealotHubConfig && window.RealotHubConfig.feedbackApiUrl) || "").replace(/\/+$/, "");
+    var CFG = window.RealotHubConfig || {};
+    var API = CFG.feedbackApiKey ? String(CFG.feedbackApiUrl || "").replace(/\/+$/, "") : "";
+    var KEY = String(CFG.feedbackApiKey || "");
     var MB = 1024 * 1024;
     var KIND = { "image/jpeg": "image", "image/png": "image", "image/webp": "image", "image/gif": "image", "video/mp4": "video", "video/webm": "video" };
     var BY_EXT = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif", mp4: "video/mp4", webm: "video/webm" };
@@ -199,16 +201,15 @@
         improvement: "What could be better, and how?",
         engine_feature: "What would you like the engine to do?"
     };
-    var ERRORS = {
-        too_large: "That file is too large. Images can be up to 10 MB and videos up to 25 MB.",
-        file_too_large: "That file is too large. Images can be up to 10 MB and videos up to 25 MB.",
-        bad_file_type: "That file type isn't supported. Use JPG, PNG, WebP, GIF, MP4 or WebM.",
-        slow_down: "You've sent a few reports recently. Please wait a few minutes and try again.",
-        message_too_long: "Your message is too long. Please shorten it a little.",
-        empty: "Please write a few words or attach a screenshot or video.",
-        not_configured: "Reporting isn't available right now. Please try again later.",
-        origin_not_allowed: "Reporting isn't available from this address."
+    var BY_STATUS = {
+        401: "The server didn't accept this site's key. Reporting isn't available right now.",
+        403: "The server didn't accept this site's key. Reporting isn't available right now.",
+        413: "That file is too large. Images can be up to 10 MB and videos up to 25 MB.",
+        415: "That file type isn't supported. Use JPG, PNG, WebP, GIF, MP4 or WebM.",
+        429: "Too many reports right now. Please wait a few minutes and try again."
     };
+    var COOLDOWN_KEY = "realot_report_times";   // keeps one browser from sending report after report
+    var COOLDOWN_MAX = 5, COOLDOWN_MS = 10 * 60 * 1000;
 
     function $(id) { return document.getElementById(id); }
     var els = {
@@ -305,7 +306,84 @@
     // Dropping a file anywhere else must not make the browser open it and lose the form.
     ["dragover", "drop"].forEach(function (t) { window.addEventListener(t, function (e) { if (!els.drop.contains(e.target)) e.preventDefault(); }); });
 
-    /* ---- sending ---- */
+    /* ---- sending: the steps from the feedback server's guide, straight from the browser ---- */
+    function authHeaders(json) {
+        var h = { Authorization: "Bearer " + KEY };
+        if (json) h["Content-Type"] = "application/json";
+        return h;
+    }
+
+    /** What the file really is, judged by its first bytes (not by its name). */
+    function sniff(b) {
+        function at(i) { for (var k = 1; k < arguments.length; k++) if (b[i + k - 1] !== arguments[k]) return false; return true; }
+        if (at(0, 0xff, 0xd8, 0xff)) return "image/jpeg";
+        if (at(0, 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return "image/png";
+        if (at(0, 0x47, 0x49, 0x46, 0x38)) return "image/gif";
+        if (at(0, 0x52, 0x49, 0x46, 0x46) && at(8, 0x57, 0x45, 0x42, 0x50)) return "image/webp";
+        if (at(4, 0x66, 0x74, 0x79, 0x70)) return "video/mp4";
+        if (at(0, 0x1a, 0x45, 0xdf, 0xa3)) return "video/webm";
+        return "";
+    }
+
+    function readHead(file) {
+        if (file.slice(0, 16).arrayBuffer) return file.slice(0, 16).arrayBuffer().then(function (buf) { return new Uint8Array(buf); });
+        return new Promise(function (resolve, reject) {
+            var r = new FileReader();
+            r.onload = function () { resolve(new Uint8Array(r.result)); };
+            r.onerror = reject;
+            r.readAsArrayBuffer(file.slice(0, 16));
+        });
+    }
+
+    /** { message } for an error we explain, or throws a network error for the caller to explain. */
+    function failFor(status) { var e = new Error("http " + status); e.userMessage = BY_STATUS[status] || "Something went wrong and your report wasn't sent. Please try again in a moment."; return e; }
+
+    function putFile(url, file, type) {
+        return new Promise(function (resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("PUT", url);
+            xhr.setRequestHeader("Content-Type", type);
+            xhr.timeout = 240000;
+            xhr.upload.onprogress = function (ev) { if (ev.lengthComputable) els.bar.style.width = Math.max(5, Math.round((ev.loaded / ev.total) * 100)) + "%"; };
+            xhr.onload = function () { if (xhr.status >= 200 && xhr.status < 300) resolve(); else reject(failFor(xhr.status)); };
+            xhr.onerror = function () { reject(new Error("network")); };
+            xhr.ontimeout = function () { reject(new Error("timeout")); };
+            xhr.send(file);
+        });
+    }
+
+    /** 1) ask for an upload address  2) send the bytes there  3) resolves with the file's path */
+    function uploadFile(file) {
+        return readHead(file).then(function (head) {
+            var type = sniff(head);
+            if (!type) { var e = new Error("type"); e.userMessage = BY_STATUS[415]; throw e; }
+            if (file.size > LIMIT[KIND[type]]) { var e2 = new Error("size"); e2.userMessage = BY_STATUS[413]; throw e2; }
+            say("Uploading\u2026");
+            return fetch(API + "/api/storage/uploads/request-url", {
+                method: "POST",
+                headers: authHeaders(true),
+                body: JSON.stringify({ name: String(file.name || "upload").slice(0, 100), size: file.size, contentType: type })
+            }).then(function (res) {
+                if (!res.ok) throw failFor(res.status);
+                return res.json();
+            }).then(function (slot) {
+                if (!slot || typeof slot.uploadURL !== "string" || typeof slot.objectPath !== "string") throw failFor(502);
+                return putFile(slot.uploadURL, file, type).then(function () { return { path: slot.objectPath, kind: KIND[type] }; });
+            });
+        });
+    }
+
+    function recentCount() {
+        try {
+            var list = JSON.parse(localStorage.getItem(COOLDOWN_KEY) || "[]");
+            var now = Date.now();
+            return (Array.isArray(list) ? list : []).filter(function (t) { return now - t < COOLDOWN_MS; });
+        } catch (e) { return []; }
+    }
+    function noteSent() {
+        try { var l = recentCount(); l.push(Date.now()); localStorage.setItem(COOLDOWN_KEY, JSON.stringify(l)); } catch (e) { /* private mode */ }
+    }
+
     function environment() {
         var v = window.RealotVersion || "unknown";
         var dpr = window.devicePixelRatio || 1;
@@ -335,32 +413,34 @@
         if (state.sending || !API) return;
         var text = els.msg.value.trim();
         if (text.length < 3 && !state.file) { say("Please write a few words or attach a screenshot or video.", true); els.msg.focus(); return; }
-
-        var data = new FormData();
-        data.append("category", state.category);
-        data.append("message", composeMessage());
-        data.append("website", els.hp.value);
-        if (state.file) data.append("media", state.file, state.file.name || "upload");
+        // Hidden "website" box that real people never fill in: bots do. Pretend it worked.
+        if (els.hp.value.trim() !== "") { finish(); return; }
+        if (recentCount().length >= COOLDOWN_MAX) { say(BY_STATUS[429], true); return; }
 
         setBusy(true);
         say("");
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", API + "/feedback");
-        xhr.timeout = 240000;
-        xhr.upload.onprogress = function (ev) {
-            if (ev.lengthComputable) els.bar.style.width = Math.round((ev.loaded / ev.total) * 100) + "%";
-        };
-        xhr.upload.onload = function () { els.bar.style.width = "100%"; say("Almost done\u2026"); };
-        xhr.onload = function () {
-            var body = null;
-            try { body = JSON.parse(xhr.responseText); } catch (err) { /* not JSON */ }
+        els.bar.style.width = "5%";
+
+        var upload = state.file ? uploadFile(state.file) : Promise.resolve(null);
+        upload.then(function (media) {
+            say("Sending your report\u2026");
+            els.bar.style.width = "100%";
+            var body = { category: state.category };
+            var message = composeMessage();
+            if (message) body.message = message;
+            if (media) body[media.kind === "image" ? "imagePath" : "videoPath"] = media.path;
+            return fetch(API + "/api/feedback", { method: "POST", headers: authHeaders(true), body: JSON.stringify(body) });
+        }).then(function (res) {
+            if (!res.ok) throw failFor(res.status);
+            noteSent();
             setBusy(false);
-            if (xhr.status === 200 && body && body.ok) { finish(); return; }
-            say((body && ERRORS[body.error]) || "Something went wrong and your report wasn't sent. Please try again in a moment.", true);
-        };
-        xhr.onerror = function () { setBusy(false); say("Couldn't reach the server. Check your connection and try again.", true); };
-        xhr.ontimeout = function () { setBusy(false); say("That took too long. Check your connection, or try a smaller file.", true); };
-        xhr.send(data);
+            finish();
+        }).catch(function (err) {
+            setBusy(false);
+            if (err && err.userMessage) say(err.userMessage, true);
+            else if (err && err.message === "timeout") say("That took too long. Check your connection, or try a smaller file.", true);
+            else say("Couldn't reach the server. Check your connection and try again.", true);
+        });
     });
 
     function finish() {

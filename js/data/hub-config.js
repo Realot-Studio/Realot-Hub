@@ -1,19 +1,19 @@
 /**
  * js/data/hub-config.js
  *
- * The few settings the hub needs from the outside world. Loaded by index.html
- * (announcements bell) and report/index.html (bug report page).
+ * Settings for the hub's bug report page (report/index.html) and the announcements
+ * bell (js/components/Announcements.js). They talk straight to your feedback server.
  *
- * feedbackApiUrl: the address of your deployed Realot Worker (see the Worker's
- *   README), for example "https://realot-feedback.yourname.workers.dev".
- *   No trailing slash. One Worker serves three things: the bug report page,
- *   the announcements bell, and the editor's Android (APK) builds.
- *   Leave it empty and the bell and report page show a friendly "not set up
- *   yet" message, and APK export falls back to temporary self-service keys.
+ * NOTE: this file is PUBLIC (every visitor can read it), so the key below is visible to anyone
+ * who looks. If it is ever abused, make a new key on the feedback server's API keys page, delete
+ * the old one, and paste the new one here.
  *
- * This file is PUBLIC (every visitor can read it). Never put an API key here;
- * the key belongs in the Worker as a secret.
+ * Your feedback server must allow requests from your website (CORS): it has to answer with
+ * "Access-Control-Allow-Origin" for your hub's address and allow the "Authorization" and
+ * "Content-Type" headers. If the bell or report page says it can't reach the server, check the
+ * browser console (F12): a "CORS" error means the server needs that setting.
  */
 window.RealotHubConfig = {
-    feedbackApiUrl: "https://realot-worker.ethanbanyam.workers.dev"
+    feedbackApiUrl: "https://developer-feedback-hub--vealis-service.replit.app",
+    feedbackApiKey: "ef_live_33e9b611537234adcd36e7ba4fe544aebe4ac797983e827fc98a99084efc4ff6"
 };

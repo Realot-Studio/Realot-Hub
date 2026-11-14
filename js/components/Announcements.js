@@ -2,8 +2,9 @@
  * Announcements.js
  * The bell in the top bar: notes from the developer. Click it to read them.
  *
- * - Messages come from the feedback Worker (GET /announcements), never straight
- *   from the feedback server, so no API key is ever in this file.
+ * - Messages come straight from the feedback server (GET /api/developer-messages,
+ *   with the key from js/data/hub-config.js), checked every 15 seconds while the
+ *   page is visible. A new message shows a pop-up notification and a red number.
  * - The top bar re-renders on every state change, which recreates the bell
  *   button. So all state lives here, the panel lives on <body>, and
  *   createBell() just hands the top bar a fresh button that reflects it.
@@ -14,11 +15,13 @@ window.RealotAnnouncements = (function () {
 
     var SEEN_KEY = 'realot_announce_seen';
     var CACHE_KEY = 'realot_announce_cache';
-    var POLL_MS = 5 * 60 * 1000;     // check for new announcements every 5 minutes
-    var STALE_MS = 30 * 1000;        // opening the panel refreshes if the list is older than this
+    var POLL_MS = 15 * 1000;         // check for new announcements every 15 seconds (while the page is visible)
+    var STALE_MS = 5 * 1000;         // opening the panel refreshes if the list is older than this
+    var EPOCH = '1970-01-01T00:00:00.000Z';
+    var MAX_KEEP = 50;               // newest announcements kept in the list
     var NEW_WINDOW_MS = 14 * 24 * 60 * 60 * 1000; // first visit: count the last 14 days as unread
 
-    var state = { items: [], status: 'idle', open: false, lastFetch: 0 };
+    var state = { items: [], status: 'idle', open: false, lastFetch: 0, loadedOnce: false };
     var freshIds = {};               // ids that were unread when the panel was opened (get a "new" dot)
     var seen = loadSeen();           // ISO time of the newest announcement the visitor has already opened
     var panel = null;
@@ -27,7 +30,8 @@ window.RealotAnnouncements = (function () {
 
     function apiBase() {
         var cfg = window.RealotHubConfig || {};
-        return String(cfg.feedbackApiUrl || '').replace(/\/+$/, '');
+        // Both the address and the key are needed; without them the bell says "not connected".
+        return cfg.feedbackApiKey ? String(cfg.feedbackApiUrl || '').replace(/\/+$/, '') : '';
     }
 
     function storageGet(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } }
@@ -42,7 +46,7 @@ window.RealotAnnouncements = (function () {
     function loadCache() {
         try {
             var list = JSON.parse(storageGet(CACHE_KEY) || '[]');
-            if (Array.isArray(list)) state.items = list.filter(validItem).slice(0, 30);
+            if (Array.isArray(list)) state.items = list.filter(validItem).slice(0, MAX_KEEP);
         } catch (e) { /* ignore a damaged cache */ }
     }
 
@@ -222,6 +226,21 @@ window.RealotAnnouncements = (function () {
 
     /* ---------------- loading ---------------- */
 
+    /** Newest createdAt we already have: the next check only asks for anything after it. */
+    function cursor() {
+        var newest = state.items.reduce(function (max, m) { return Math.max(max, Date.parse(m.createdAt)); }, 0);
+        return newest > 0 ? new Date(newest).toISOString() : EPOCH;
+    }
+
+    function cleanItem(m) {
+        return {
+            id: String(m.id),
+            title: String(m.title == null ? '' : m.title).slice(0, 200),
+            message: String(m.message == null ? '' : m.message).slice(0, 5000),
+            createdAt: String(m.createdAt)
+        };
+    }
+
     function refresh(force) {
         var base = apiBase();
         if (!base || inflight) return;
@@ -229,14 +248,29 @@ window.RealotAnnouncements = (function () {
         inflight = true;
         if (state.items.length === 0) { state.status = 'loading'; if (state.open) renderPanel(); }
 
+        var url = base + '/api/developer-messages?after=' + encodeURIComponent(cursor()) + '&limit=100';
         var controller = typeof AbortController === 'function' ? new AbortController() : null;
         var timer = setTimeout(function () { if (controller) controller.abort(); }, 12000);
-        fetch(base + '/announcements?limit=30', { headers: { Accept: 'application/json' }, signal: controller ? controller.signal : undefined })
+        var arrived = [];
+        fetch(url, {
+            headers: { Accept: 'application/json', Authorization: 'Bearer ' + window.RealotHubConfig.feedbackApiKey },
+            signal: controller ? controller.signal : undefined
+        })
             .then(function (res) { if (!res.ok) throw new Error('status ' + res.status); return res.json(); })
             .then(function (data) {
-                var list = data && Array.isArray(data.items) ? data.items.filter(validItem) : null;
-                if (!list) throw new Error('bad data');
-                state.items = list.slice(0, 30);
+                var list = Array.isArray(data) ? data : (data && (data.items || data.messages));
+                if (!Array.isArray(list)) throw new Error('bad data');
+                var known = {};
+                state.items.forEach(function (m) { known[m.id] = true; });
+                list.filter(validItem).forEach(function (raw) {
+                    var item = cleanItem(raw);
+                    if (known[item.id]) return;       // already have it (the server may repeat the boundary message)
+                    known[item.id] = true;
+                    state.items.push(item);
+                    arrived.push(item);
+                });
+                state.items.sort(function (a, b) { return Date.parse(b.createdAt) - Date.parse(a.createdAt); });
+                state.items = state.items.slice(0, MAX_KEEP);
                 state.status = 'ok';
                 state.lastFetch = Date.now();
                 storageSet(CACHE_KEY, JSON.stringify(state.items));
@@ -245,14 +279,64 @@ window.RealotAnnouncements = (function () {
             .then(function () {
                 clearTimeout(timer);
                 inflight = false;
+                var firstLoad = !state.loadedOnce && state.status === 'ok';
+                if (state.status === 'ok') state.loadedOnce = true;
                 if (state.open) {
                     // Anything that arrived while the panel is open counts as new, then counts as read.
                     state.items.forEach(function (m) { if (isNew(m)) freshIds[m.id] = true; });
                     renderPanel();
                     markSeen();
+                } else {
+                    announceArrivals(arrived, firstLoad);
                 }
                 updateBadges();
             });
+    }
+
+    /** Pop-up notification: one per message that arrives while the page is open, or a summary on first load. */
+    function announceArrivals(arrived, firstLoad) {
+        var fresh = arrived.filter(isNew);
+        if (fresh.length === 0) return;
+        if (firstLoad || fresh.length > 3) {
+            var n = unreadCount();
+            showToast(n === 1 ? (fresh[0].title || 'New announcement') : n + ' new announcements',
+                      n === 1 ? fresh[0].message : 'Click to read them.');
+            return;
+        }
+        fresh.slice().reverse().forEach(function (m) { showToast(m.title || 'New announcement', m.message); });
+    }
+
+    /* ---------------- pop-up notifications ---------------- */
+
+    var toastHost = null;
+
+    function showToast(title, text) {
+        if (!document.body) return;
+        if (!toastHost) {
+            toastHost = document.createElement('div');
+            toastHost.className = 'ann-toasts';
+            toastHost.setAttribute('aria-live', 'polite');
+            document.body.appendChild(toastHost);
+        }
+        var toast = document.createElement('div');
+        toast.className = 'ann-toast';
+        toast.setAttribute('role', 'status');
+
+        var head = document.createElement('div'); head.className = 'ann-toast-title'; head.textContent = title || 'New announcement';
+        var body = document.createElement('div'); body.className = 'ann-toast-text'; body.textContent = String(text || '').slice(0, 140);
+        var x = document.createElement('button'); x.type = 'button'; x.className = 'ann-toast-x'; x.setAttribute('aria-label', 'Dismiss'); x.textContent = '\u00d7';
+        toast.appendChild(head); toast.appendChild(body); toast.appendChild(x);
+
+        function remove() { if (toast.parentNode) toast.parentNode.removeChild(toast); }
+        x.addEventListener('click', function (e) { if (e.stopPropagation) e.stopPropagation(); remove(); });
+        toast.addEventListener('click', function () {
+            remove();
+            var bell = document.querySelector('.ann-bell');
+            if (!state.open) open(bell);
+        });
+        toastHost.appendChild(toast);
+        while (toastHost.children && toastHost.children.length > 3) toastHost.removeChild(toastHost.children[0]);
+        setTimeout(remove, 9000);
     }
 
     function init() {
@@ -261,7 +345,7 @@ window.RealotAnnouncements = (function () {
         updateBadges();
         setTimeout(function () { refresh(true); }, 800);            // after the first paint
         if (!pollTimer) pollTimer = setInterval(function () { if (!document.hidden) refresh(true); }, POLL_MS);
-        document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(false); });
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(true); });
         window.addEventListener('online', function () { refresh(true); });
     }
 
