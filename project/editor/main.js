@@ -47,6 +47,7 @@ import { renderStatusBar, startLiveStats } from "./panels/StatusBar.js";
 // resolve to the SAME module instance.
 import { mountOrUpdateSceneViewport, getGame, detachViewportCanvas, isInitialProjectLoadDone, captureProjectThumbnail } from "./viewport/SceneViewport.js";
 import { syncGameView } from "./viewport/GameView.js";
+import { applyMixedIndicators } from "./panels/InspectorMulti.js";
 import { openPlayWindow, closePlayWindow, isPlayWindowOpen, getPlayWindow, isTrustedPlayMessage, sendPlayPayload } from "./viewport/PlayWindow.js";
 import { attachEditorEvents, loadProjectFromFile } from "./state/EditorEvents.js";
 import { adoptFileHandle } from "./state/FileSync.js";
@@ -292,6 +293,7 @@ function render() {
 
   mountOrUpdateSceneViewport(render);
   try { syncGameView(); } catch (err) { console.error("[render] Game view sync failed:", err); }
+  try { applyMixedIndicators(document); } catch (err) { console.error("[render] Mixed-value indicators failed:", err); }
   mountScriptEditor();
 
   if (editorState.inspectorScrollTo) {

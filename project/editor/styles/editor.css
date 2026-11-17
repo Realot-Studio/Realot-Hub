@@ -604,3 +604,17 @@ body.show-component-notes .inspector-note-inline{display:inline;}
 .lights-toggle{position:relative;}
 .lights-toggle.lights-off{color:#777;}
 .lights-toggle.lights-off::after{content:"";position:absolute;left:50%;top:50%;width:18px;height:1.5px;background:#e06962;transform:translate(-50%,-50%) rotate(-45deg);border-radius:1px;pointer-events:none;}
+
+/* ---- Multi-edit (several objects selected): shared components, "different values" fields ---- */
+.multi-edit-note{margin:6px 8px 4px;padding:7px 9px;border-radius:4px;background:#2c3a4f;border:1px solid #3b5170;color:#b9c7da;font-size:10px;line-height:1.45;display:flex;flex-direction:column;gap:2px;}
+.multi-edit-note b{color:#e6edf7;font-size:11px;}
+.obj-name-input.multi-name{display:flex;align-items:center;color:#c9d4e3;font-style:italic;border-color:transparent;background:transparent;}
+input.mixed::placeholder{color:#e0b05a;opacity:1;}
+input.mixed[type="number"],input.mixed[type="text"]{background-image:repeating-linear-gradient(135deg,rgba(224,176,90,.10) 0 4px,transparent 4px 8px);}
+select.mixed{color:#e0b05a;}
+input.color-swatch-input.mixed{outline:1px dashed #e0b05a;outline-offset:1px;opacity:.85;}
+
+/* ---- Project panel: several assets selected (Ctrl/Shift+click) ---- */
+.asset-item.multi-selected{outline:1px solid #5b9bd5;outline-offset:-1px;background:rgba(91,155,213,.16);border-radius:4px;}
+.asset-bulk-delete{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:2px 8px;height:18px;font-size:10px;color:#fff;background:#a63d37;border:1px solid #7d2c27;border-radius:3px;cursor:pointer;}
+.asset-bulk-delete:hover{background:#c24a43;}

@@ -1207,7 +1207,7 @@ function attachGizmoPointerEvents(mount) {
     const spriteHit = hitTestEntities(world.x, world.y);
     const hitId = lightHit ? lightHit.id : audioHit ? audioHit.id : audioListenerHit ? audioListenerHit.id : (spriteHit ? spriteHit.id : null);
     if (hitId) {
-      if (e.shiftKey) {
+      if (e.shiftKey || e.ctrlKey || e.metaKey) {
         const i = editorState.selectedIds.indexOf(hitId);
         if (i >= 0) editorState.selectedIds.splice(i, 1);
         else editorState.selectedIds.push(hitId);

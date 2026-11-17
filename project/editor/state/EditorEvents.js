@@ -61,7 +61,7 @@ import {
   importSpriteSheetFrames,
   importGifFrames,
 } from "../animation/AnimationImport.js";
-import { importSpriteFiles, getSpriteAsset, importAudioFiles, registerSpriteAsset, registerTileAsset, deleteSpriteAsset, deleteAudioAsset } from "../../runtime/assets/AssetRegistry.js";
+import { importSpriteFiles, getSpriteAsset, getAudioAsset, importAudioFiles, registerSpriteAsset, registerTileAsset, deleteSpriteAsset, deleteAudioAsset } from "../../runtime/assets/AssetRegistry.js";
 import { syncBackgroundColorLive, switchScene, syncAfterExternalSceneChange, requestSceneViewportRedraw } from "../viewport/SceneViewport.js";
 import { setPlayWindowPaused } from "../viewport/PlayWindow.js";
 import { serializeEntity, instantiateEntity } from "../../runtime/scene/SceneSerializer.js";
@@ -73,6 +73,11 @@ import { openScriptEditor, handleScriptEditorAction } from "../panels/ScriptEdit
 import { setLayerName } from "./PhysicsLayers.js";
 import { setNavAreaName } from "./NavAreas.js";
 import { addTag, deleteTag } from "./Tags.js";
+import { applyHierarchyClick } from "./SelectionLogic.js";
+import {
+  FOLDER_ASSET_KIND, buildDeleteMessage, buildClearSceneMessage, buildDeleteObjectsMessage,
+  buildDeleteFolderMessage, planSceneDeletion,
+} from "./AssetSelection.js";
 import { snapshotNow, beginEdit, commitEdit, performUndoRedo } from "./UndoManager.js";
 import { exportProject, importProject, downloadBlob } from "./ProjectIO.js";
 import { buildExport, slugifyForFilename } from "../export/ExportGame.js";
@@ -182,6 +187,9 @@ const COMPONENT_TYPE_MAP = {
 // everything here reads from this single constant, so nothing else
 // needs to change.
 const MAX_CAMERAS = 1;
+
+/** Deleting this many objects (or more) at once from the Hierarchy asks for confirmation first. */
+const CONFIRM_DELETE_OBJECTS = 5;
 
 function _cameraCount(world) {
   if (!world) return 0;
@@ -498,19 +506,34 @@ let _lastSceneClick = { id: null, time: 0 };
         }
         break;
       case "select-entity": {
-        const id = t.dataset.id;
-        if (e.shiftKey) {
-          // Shift+click toggles membership for multi-select.
-          const idx = editorState.selectedIds.indexOf(id);
-          if (idx >= 0) editorState.selectedIds.splice(idx, 1);
-          else editorState.selectedIds.push(id);
-          editorState.selectedId = editorState.selectedIds.length
-            ? editorState.selectedIds[editorState.selectedIds.length - 1]
-            : null;
-        } else {
-          editorState.selectedId = id;
-          editorState.selectedIds = [id];
-        }
+        // Ctrl/Cmd toggles a row, Shift selects a range (rules in SelectionLogic.js).
+        const visible = Array.prototype.map.call(
+          document.querySelectorAll(".hierarchy-tree .entity-row"),
+          (row) => row.dataset.id
+        );
+        const next = applyHierarchyClick(
+          { selectedId: editorState.selectedId, selectedIds: editorState.selectedIds, anchorId: editorState.selectionAnchorId },
+          t.dataset.id,
+          { shift: e.shiftKey, additive: e.ctrlKey || e.metaKey },
+          visible
+        );
+        editorState.selectedId = next.selectedId;
+        editorState.selectedIds = next.selectedIds;
+        editorState.selectionAnchorId = next.anchorId;
+        render();
+        break;
+      }
+      // Edit > Clear Scene: delete everything placed in the CURRENT scene (never the assets).
+      case "clear-scene": {
+        editorState.openMenu = null;
+        editorState.openSubmenu = null;
+        _clearScene();
+        render();
+        break;
+      }
+      // "Delete N selected" button in the Project panel (same as pressing Delete there).
+      case "delete-selected-assets": {
+        _deleteSelectedAssets();
         render();
         break;
       }
@@ -693,31 +716,26 @@ let _lastSceneClick = { id: null, time: 0 };
         // picker was opened, just above) decides which one this
         // particular pick applies to, since both share this same modal.
         var pickedSpriteKey = t.dataset.spriteKey;
-        var spritePickEnt = editorState.world && editorState.world.getEntity(editorState.selectedId);
-        if (editorState.spritePickerTarget === "StrokePath") {
-          var strokePathForPick = spritePickEnt && spritePickEnt.getComponent(STROKE_PATH);
-          if (strokePathForPick && pickedSpriteKey) {
-            snapshotNow("scene");
-            strokePathForPick.textureKey = pickedSpriteKey;
-            var pickedTextureAsset = getSpriteAsset(pickedSpriteKey);
-            pushLog("log", "Set Stroke Path texture to '" + (pickedTextureAsset ? pickedTextureAsset.name : pickedSpriteKey) + "' on '" + spritePickEnt.name + "'.");
-          }
-        } else if (editorState.spritePickerTarget === "Joint2D") {
-          var jointForPick = spritePickEnt && spritePickEnt.getComponent(JOINT_2D);
-          if (jointForPick && pickedSpriteKey) {
-            snapshotNow("scene");
-            jointForPick.textureKey = pickedSpriteKey;
-            var pickedJointTextureAsset = getSpriteAsset(pickedSpriteKey);
-            pushLog("log", "Set Joint 2D texture to '" + (pickedJointTextureAsset ? pickedJointTextureAsset.name : pickedSpriteKey) + "' on '" + spritePickEnt.name + "'.");
-          }
-        } else {
-          var spritePickRenderer = spritePickEnt && spritePickEnt.getComponent(SPRITE_RENDERER);
-          if (spritePickRenderer && pickedSpriteKey) {
-            snapshotNow("scene");
-            spritePickRenderer.spriteKey = pickedSpriteKey;
-            var pickedAsset = getSpriteAsset(pickedSpriteKey);
-            pushLog("log", "Set sprite to '" + (pickedAsset ? pickedAsset.name : pickedSpriteKey) + "' on '" + spritePickEnt.name + "'.");
-          }
+        var pickTargets = selectedEntitiesForEdit(); // every selected object (just one when a single object is selected)
+        var pickComponent = editorState.spritePickerTarget === "StrokePath" ? STROKE_PATH
+          : editorState.spritePickerTarget === "Joint2D" ? JOINT_2D
+          : SPRITE_RENDERER;
+        var pickLabel = editorState.spritePickerTarget === "StrokePath" ? "Stroke Path texture"
+          : editorState.spritePickerTarget === "Joint2D" ? "Joint 2D texture"
+          : "sprite";
+        var pickedAsset = pickedSpriteKey ? getSpriteAsset(pickedSpriteKey) : null;
+        var pickedChanged = [];
+        pickTargets.forEach(function (pickEnt) {
+          var comp = pickEnt.getComponent(pickComponent);
+          if (!comp || !pickedSpriteKey) return;
+          if (pickedChanged.length === 0) snapshotNow("scene"); // one undo step for the whole pick
+          if (pickComponent === SPRITE_RENDERER) comp.spriteKey = pickedSpriteKey;
+          else comp.textureKey = pickedSpriteKey;
+          pickedChanged.push(pickEnt);
+        });
+        if (pickedChanged.length) {
+          pushLog("log", "Set " + pickLabel + " to '" + (pickedAsset ? pickedAsset.name : pickedSpriteKey) + "' on " +
+            (pickedChanged.length === 1 ? "'" + pickedChanged[0].name + "'" : pickedChanged.length + " objects") + ".");
         }
         editorState.spritePickerOpen = false;
         render();
@@ -1033,14 +1051,10 @@ let _lastSceneClick = { id: null, time: 0 };
         const folderId = t.dataset.folderId;
         const folder = editorState.world.getHierarchyFolder(folderId);
         if (!folder) break;
-        // No confirm() dialog here, unlike delete-sprite-asset/delete-
-        // audio-asset/delete-script-asset above: those permanently
-        // destroy content every object referencing them would then be
-        // missing. Deleting a folder is non-destructive to scene
-        // content — deleteHierarchyFolder() reparents everything inside
-        // it up one level (see World.js) rather than deleting it — so
-        // it's undo-able the same lightweight way any other Hierarchy
-        // edit is, without an extra confirmation click.
+        // Deleting a folder never deletes the objects in it (deleteHierarchyFolder()
+        // moves them up one level, see World.js) and Ctrl+Z restores it, but it is
+        // still a click that rearranges a lot of the Hierarchy, so it asks first.
+        if (!window.confirm(buildDeleteFolderMessage(folder.name))) break;
         snapshotNow("scene");
         editorState.world.deleteHierarchyFolder(folderId);
         pushLog("log", "Deleted folder '" + folder.name + "'.");
@@ -1306,10 +1320,14 @@ let _lastSceneClick = { id: null, time: 0 };
         break;
       }
       case "toggle-entity-active": {
-        const entity = editorState.world && editorState.world.getEntity(editorState.selectedId);
-        if (entity) {
+        const targets = selectedEntitiesForEdit();
+        if (targets.length) {
           snapshotNow("scene");
-          entity.active = !entity.active;
+          // One object: flip it. Several: if they all agree, flip them all; if they
+          // differ (the box shows a dash), a click turns them all on.
+          const allSame = targets.every((en) => en.active === targets[0].active);
+          const next = targets.length > 1 && !allSame ? true : !targets[0].active;
+          targets.forEach((en) => { en.active = next; });
         }
         render();
         break;
@@ -1710,6 +1728,7 @@ let _lastSceneClick = { id: null, time: 0 };
       }
       case "select-project-folder": {
         editorState.projectFolder = t.dataset.folder;
+        editorState.assetSelection = { folder: null, ids: [], anchorId: null }; // selections belong to one folder
         render();
         break;
       }
@@ -2378,7 +2397,22 @@ case "select-scene-file": {
     }
   }
 
+  // Remember whether the last press was inside the Project grid: then Delete acts on the selected
+  // ASSETS, anywhere else it acts on scene objects.
+  document.addEventListener("pointerdown", (e) => {
+    editorState.assetSelectionActive = !!(e.target.closest && e.target.closest(".proj-grid"));
+  }, true);
+
   document.addEventListener("click", (e) => {
+    // Project panel tiles: Ctrl/Shift+click selects several (hover buttons and text boxes keep their own clicks).
+    const assetTile = e.target.closest("[data-asset-id]");
+    if (assetTile && !e.target.closest(".asset-delete-btn, .asset-dup-btn") && !/^(input|textarea|select)$/i.test(e.target.tagName)) {
+      if (_assetTileClick(e, assetTile)) return;
+    } else if (!assetTile && e.target.closest(".proj-grid") && editorState.assetSelection.ids.length) {
+      // Clicking empty space in the grid clears the selection.
+      editorState.assetSelection = { folder: null, ids: [], anchorId: null };
+      render();
+    }
     const t = e.target.closest("[data-action]");
     if (!t) {
       // Clicked somewhere with no data-action at all: close any open
@@ -2431,10 +2465,132 @@ case "select-scene-file": {
       return;
     }
 
+    // Deleting a handful of objects is just Ctrl+Z away, so it stays instant; a big batch asks first.
+    if (ids.length >= CONFIRM_DELETE_OBJECTS && !window.confirm(buildDeleteObjectsMessage(ids.length))) return;
+
     snapshotNow("scene");
     for (const id of ids) editorState.world.destroyEntity(id);
     pushLog("log", "Deleted " + ids.length + " object" + (ids.length > 1 ? "s" : "") + ".");
     _setSelection([]);
+  }
+
+  /**
+   * Edit > Clear Scene. Deletes every object and Hierarchy folder in the open scene after one
+   * confirmation. Assets (sprites, audio, scripts, prefabs) and other scenes are not touched.
+   * The scene's Camera stays, because a scene always needs exactly one (see MAX_CAMERAS).
+   * One Ctrl+Z brings everything back.
+   */
+  function _clearScene() {
+    const world = editorState.world;
+    if (!world) return;
+    const all = world.getAllEntities();
+    const cameras = all.filter((en) => en.hasComponent(CAMERA));
+    const keep = cameras.find((en) => en.getComponent(CAMERA).isMain) || cameras[0] || null;
+    const doomed = all.filter((en) => en !== keep);
+    const folders = world.hierarchyFolders.length;
+    if (doomed.length === 0 && folders === 0) {
+      pushLog("log", "The scene is already empty.");
+      return;
+    }
+    const sceneList = editorState.game ? editorState.game.getSceneList() : [];
+    const active = editorState.game ? sceneList.find((sc) => sc.id === editorState.game.getActiveSceneId()) : null;
+    if (!window.confirm(buildClearSceneMessage(active ? active.name : "this scene", doomed.length, folders))) return;
+
+    snapshotNow("scene");
+    for (const en of doomed) world.destroyEntity(en.id);
+    // Folders go one at a time: deleting a folder moves whatever is inside it (here, at most the
+    // kept Camera) up a level, so nothing is left pointing at a folder that no longer exists.
+    for (const f of world.hierarchyFolders.slice()) world.deleteHierarchyFolder(f.id);
+    _setSelection([]);
+    editorState.selectionAnchorId = null;
+    pushLog("log", "Cleared the scene: deleted " + doomed.length + " object" + (doomed.length === 1 ? "" : "s") +
+      (folders ? " and " + folders + " folder" + (folders === 1 ? "" : "s") : "") + ". Assets were kept.");
+  }
+
+  /** Display name of a project asset, for the confirmation question. */
+  function _assetDisplayName(kind, id) {
+    if (kind === "sprite") { const a = getSpriteAsset(id); return (a && a.name) || id; }
+    if (kind === "audio") { const a = getAudioAsset(id); return (a && a.name) || id; }
+    if (kind === "prefab") { const p = getPrefab(id); return (p && p.name) || id; }
+    if (kind === "scene") {
+      const sc = editorState.game ? editorState.game.getSceneList().find((x) => x.id === id) : null;
+      return (sc && sc.name) || id;
+    }
+    return id; // script: the id is its name
+  }
+
+  /**
+   * Deletes the assets selected in the Project panel (Ctrl/Shift+click), after ONE confirmation
+   * that names them. Uses the same per-asset delete functions as the hover "x" buttons.
+   */
+  function _deleteSelectedAssets() {
+    const sel = editorState.assetSelection;
+    const folder = editorState.projectFolder;
+    const kind = FOLDER_ASSET_KIND[folder];
+    if (!kind || !sel || sel.folder !== folder || sel.ids.length === 0) return;
+
+    let ids = sel.ids.slice();
+    let activeSceneId = null;
+    if (kind === "scene") {
+      if (!editorState.game) return;
+      const all = editorState.game.getSceneList().map((x) => x.id);
+      activeSceneId = editorState.game.getActiveSceneId();
+      const plan = planSceneDeletion(all, ids, activeSceneId);
+      if (plan.blocked) {
+        pushLog("warn", "A project needs at least one scene. Select fewer scenes to delete.");
+        return;
+      }
+      ids = plan.order;
+    }
+    if (ids.length === 0) return;
+    if (!window.confirm(buildDeleteMessage(kind, ids.map((id) => _assetDisplayName(kind, id))))) return;
+
+    let deleted = 0;
+    let activeDeleted = false;
+    for (const id of ids) {
+      let ok = false;
+      if (kind === "sprite") ok = deleteSpriteAsset(id);
+      else if (kind === "audio") ok = deleteAudioAsset(id);
+      else if (kind === "script") ok = deleteScriptEverywhere(id);
+      else if (kind === "prefab") ok = deletePrefab(id);
+      else if (kind === "scene") {
+        ok = editorState.game.deleteScene(id);
+        if (ok && id === activeSceneId) activeDeleted = true;
+        if (ok && editorState.selectedSceneFileId === id) editorState.selectedSceneFileId = null;
+      }
+      if (ok) deleted++;
+    }
+    editorState.assetSelection = { folder: null, ids: [], anchorId: null };
+    if (activeDeleted) syncAfterExternalSceneChange();
+    pushLog("log", "Deleted " + deleted + " " + kind + (deleted === 1 ? "" : "s") + ".");
+  }
+
+  /**
+   * A click on a Project panel tile. Ctrl/Cmd toggles it and Shift selects a range (the same
+   * rules as the Hierarchy); those clicks are fully handled here. A plain click selects just
+   * this tile and then carries on with the tile's normal action (open, drag source...).
+   * @returns {boolean} true when the click was consumed
+   */
+  function _assetTileClick(e, tile) {
+    const folder = editorState.projectFolder;
+    if (!FOLDER_ASSET_KIND[folder]) return false;
+    const visible = Array.prototype.map.call(
+      document.querySelectorAll(".proj-grid .asset-item[data-asset-id]"),
+      (el) => el.dataset.assetId
+    );
+    const cur = editorState.assetSelection.folder === folder
+      ? editorState.assetSelection
+      : { folder, ids: [], anchorId: null };
+    const next = applyHierarchyClick(
+      { selectedId: cur.ids.length ? cur.ids[cur.ids.length - 1] : null, selectedIds: cur.ids, anchorId: cur.anchorId },
+      tile.dataset.assetId,
+      { shift: e.shiftKey, additive: e.ctrlKey || e.metaKey },
+      visible
+    );
+    editorState.assetSelection = { folder, ids: next.selectedIds, anchorId: next.anchorId };
+    editorState.assetSelectionActive = true;
+    render();
+    return !!(e.shiftKey || e.ctrlKey || e.metaKey);
   }
 
   function _copySelection() {
@@ -2672,6 +2828,12 @@ case "select-scene-file": {
     if (_typing || _inScriptEditor || editorState.exportOpen || !editorState.world) return;
     if (e.key === "Delete" || e.key === "Backspace") {
       e.preventDefault(); // stop Backspace navigating back / Delete scrolling
+      // Last click was in the Project grid: Delete means "delete the selected assets" (never scene objects).
+      if (editorState.assetSelectionActive && editorState.bottomTab === "project") {
+        _deleteSelectedAssets();
+        render();
+        return;
+      }
       if (_liveSelectionIds().length === 0) return;
       _deleteSelection();
       render();
@@ -3158,7 +3320,7 @@ case "select-scene-file": {
       // commitEdit() on "change" below (fired once on blur/Enter/drag-
       // release) is what actually pushes the step.
       beginEdit("scene");
-      applyFieldChange(field, e.target);
+      applyFieldChangeToSelection(field, e.target);
       // Color inputs: update the Scene viewport's rendered background
       // live on every drag tick, WITHOUT a full render() — render()
       // rebuilds the entire DOM tree, which would destroy/reopen the
@@ -3513,10 +3675,10 @@ case "select-scene-file": {
       // both no-ops (cheap) for an entity that isn't a prefab instance,
       // so this is safe to call unconditionally without checking
       // prefabId here first.
-      const prefabEditEntity = editorState.world && editorState.world.getEntity(editorState.selectedId);
-      const prefabEditBefore = prefabEditEntity ? snapshotEntityComponents(prefabEditEntity) : null;
-      applyFieldChange(field, e.target);
-      if (prefabEditEntity) diffEntityAndRecordOverrides(prefabEditEntity, prefabEditBefore);
+      // With several objects selected, every one of them is edited, so every one is tracked.
+      const prefabEditTargets = selectedEntitiesForEdit().map((en) => ({ entity: en, before: snapshotEntityComponents(en) }));
+      applyFieldChangeToSelection(field, e.target);
+      prefabEditTargets.forEach((target) => diffEntityAndRecordOverrides(target.entity, target.before));
       commitEdit("scene");
       render();
     }
@@ -3558,6 +3720,56 @@ case "select-scene-file": {
     }
     render();
   }, 33); // ~30Hz poll is plenty for a UI preview; the fps gate above is what actually paces frame advances
+}
+
+/**
+ * Every object an Inspector edit should reach: all selected objects, primary first,
+ * or just the one when a single object is selected.
+ * @returns {Array<import('../../runtime/core/Entity.js').Entity>}
+ */
+function selectedEntitiesForEdit() {
+  const world = editorState.world;
+  if (!world) return [];
+  const primary = world.getEntity(editorState.selectedId);
+  if (!primary) return [];
+  const ids = editorState.selectedIds || [];
+  if (ids.length <= 1 || !ids.includes(primary.id)) return [primary];
+  const others = ids.filter((id) => id !== primary.id).map((id) => world.getEntity(id)).filter(Boolean);
+  return [primary].concat(others);
+}
+
+/**
+ * Applies one Inspector edit to EVERY selected object (Unity-style multi-edit).
+ * applyFieldChange() edits "the selected object", so this points the selection at
+ * each object in turn and puts it back afterwards; an object without the edited
+ * component is simply skipped by applyFieldChange. A field edit only touches the
+ * one field that changed (one axis of a position, one checkbox...), so objects keep
+ * their other values.
+ */
+function applyFieldChangeToSelection(field, inputEl) {
+  const targets = selectedEntitiesForEdit();
+  if (targets.length <= 1) {
+    applyFieldChange(field, inputEl);
+    return;
+  }
+  // "Add Tag..." asks for a name; ask ONCE, then give every object that tag.
+  if (field === "entity.tag" && inputEl.value === "Add Tag...") {
+    const created = window.prompt("Create an object tag:", "");
+    if (created && created.trim()) {
+      const tag = addTag(created);
+      if (tag) targets.forEach((en) => { en.tag = tag; });
+    }
+    return;
+  }
+  const primaryId = editorState.selectedId;
+  try {
+    for (const en of targets) {
+      editorState.selectedId = en.id;
+      applyFieldChange(field, inputEl);
+    }
+  } finally {
+    editorState.selectedId = primaryId;
+  }
 }
 
 /**

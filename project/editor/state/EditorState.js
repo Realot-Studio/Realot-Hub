@@ -35,6 +35,13 @@ export const editorState = {
    *  toggles membership (and updates the primary). Delete / Copy /
    *  Duplicate act on every id in here. */
   selectedIds: [],
+  /** @type {?string} the Hierarchy row Shift+click ranges start from (the row last clicked without Shift). */
+  selectionAnchorId: null,
+  /** Several-at-once selection in the Project panel (Ctrl/Shift+click on asset tiles). Scoped to one folder.
+   *  @type {{folder:?string, ids:string[], anchorId:?string}} */
+  assetSelection: { folder: null, ids: [], anchorId: null },
+  /** True while the last click was inside the Project grid, so Delete acts on assets instead of scene objects. */
+  assetSelectionActive: false,
   animOpen: false,
   physicsLayersOpen: false,
   navAreasOpen: false,

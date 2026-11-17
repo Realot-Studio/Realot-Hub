@@ -141,6 +141,7 @@ import { getSpriteAsset, getAudioAsset, getAllAudioAssets } from "../../runtime/
 import { getPrefab } from "../../runtime/prefabs/PrefabRegistry.js";
 
 import { getTagNames } from "../state/Tags.js";
+import { buildMultiInspectorHtml } from "./InspectorMulti.js";
 
 // Tags that ship with every project and cannot be deleted.
 // Only "Untagged" is truly protected — every entity needs a valid
@@ -164,6 +165,17 @@ export function renderInspector() {
     );
   }
 
+  // More than one object selected: show what they share and edit all of them
+  // together (see InspectorMulti.js).
+  const selected = (editorState.selectedIds || []).map((id) => world.getEntity(id)).filter(Boolean);
+  if (selected.length > 1 && selected.includes(entity)) {
+    return buildMultiInspectorHtml(selected, entity, renderEntityInspector);
+  }
+  return renderEntityInspector(entity);
+}
+
+/** The Inspector for exactly one object. */
+function renderEntityInspector(entity) {
   let body = "";
 
   const transform = entity.getComponent(TRANSFORM);

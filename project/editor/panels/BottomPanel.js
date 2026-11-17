@@ -34,6 +34,7 @@ import { editorState } from "../state/EditorState.js";
 import { getAllSpriteAssets, getAllAudioAssets, getAnimationFrameAssets, getTileAssets } from "../../runtime/assets/AssetRegistry.js";
 import { getAllScripts } from "../scripting/ScriptStorage.js";
 import { getAllPrefabs } from "../../runtime/prefabs/PrefabRegistry.js";
+import { decorateAssetTiles, FOLDER_ASSET_KIND } from "../state/AssetSelection.js";
 
 const FOLDER_LABELS = { scenes: "Scenes", sprites: "Sprites", audio: "Audio", scripts: "Scripts", prefabs: "Prefabs", animations: "Animation Clips", tiles: "Tiles" };
 
@@ -194,6 +195,16 @@ export function renderBottom() {
             .join("")
         : '<div class="asset-empty-hint">No prefabs yet. Select an object and click the box icon next to its name in the Inspector to create one.</div>';
       pathToolbarHtml = "";
+    }
+
+    // Mark every tile selectable, and highlight the ones in a Ctrl/Shift multi-selection.
+    const sel = editorState.assetSelection;
+    const selectedIds = sel && sel.folder === folder ? sel.ids : [];
+    gridHtml = decorateAssetTiles(gridHtml, selectedIds);
+    if (selectedIds.length > 0 && FOLDER_ASSET_KIND[folder]) {
+      pathToolbarHtml +=
+        '<button class="asset-bulk-delete" data-action="delete-selected-assets" title="Delete the selected items (Delete key). You will be asked to confirm.">' +
+        icon("trash", 11) + " Delete " + selectedIds.length + " selected</button>";
     }
 
     bodyHtml =

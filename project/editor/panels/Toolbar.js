@@ -398,6 +398,12 @@ function renderEditMenu() {
     icon("route", 12) +
     '<span>Nav Areas\u2026</span>' +
     '</button>' +
+    '<div style="height:1px;background:#444;margin:4px 0;"></div>' +
+    '<button class="dropdown-menu-item" data-action="clear-scene" title="Delete every object in this scene (your assets are kept). Asks first." style="' +
+    DROPDOWN_ITEM_STYLE + 'color:#e06962;">' +
+    icon("trash", 12) +
+    '<span>Clear Scene\u2026</span>' +
+    '</button>' +
     '</div>'
   );
 }
