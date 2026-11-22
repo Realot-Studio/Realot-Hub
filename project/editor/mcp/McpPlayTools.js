@@ -33,6 +33,7 @@ import { ENGINE_GUIDE } from "./EngineGuide.js";
 
 const TOOL_BUDGET_MS = 21000; // the relay gives a tool call 25 s in total
 const text = (value) => ({ content: [{ type: "text", text: typeof value === "string" ? value : JSON.stringify(value, null, 2) }] });
+const round2 = (n) => Math.round(n * 100) / 100;
 const fail = (message) => ({ isError: true, content: [{ type: "text", text: message }] });
 
 function game() {
@@ -271,6 +272,43 @@ export async function runMcpPlayTool(name, a) {
     case "play_screenshot": {
       const { result, images } = await sendPlayCommand("screenshot", { max_width: a.max_width, format: a.format, label: a.label || "game" });
       return withImages({ scene: result.scene, frame: result.frame, gameTimeSeconds: result.gameTimeSeconds, paused: result.paused }, images);
+    }
+
+    case "play_record": {
+      if (!isPlayWindowOpen()) throw new Error("The game is not running. Call play_restart first.");
+      const clamp = (v, lo, hi, d) => Math.max(lo, Math.min(hi, Number.isFinite(Number(v)) ? Number(v) : d));
+      const duration = clamp(a.duration_seconds, 0.2, 10, 2);
+      const frames = Math.floor(clamp(a.frames, 2, 12, 6));
+      const keys = Array.isArray(a.keys_held) ? a.keys_held.slice(0, 6).map(String) : [];
+      const watch = typeof a.watch === "string" && a.watch.trim() ? a.watch : null;
+      const interval = duration / (frames - 1);
+      const started = Date.now();
+      const images = [];
+      const samples = [];
+      const errors = [];
+      let stopped = null;
+      let index = 0;
+      while (index < frames) {
+        const remaining = TOOL_BUDGET_MS - (Date.now() - started) - 1500;
+        if (remaining < 2500) { stopped = "time budget reached after " + index + " of " + frames + " frames"; break; }
+        const count = Math.min(4, frames - index); // the game returns at most 4 screenshots per call
+        const actions = keys.map((k) => ({ type: "key_down", key: k })); // keys are released at the end of each call, so press again
+        const firstIndex = index;
+        for (let j = 0; j < count; j++, index++) {
+          actions.push({ type: "screenshot", label: "t=" + (index * interval).toFixed(2) + "s", max_width: a.max_width || 480 });
+          if (watch) actions.push({ type: "eval", expression: watch });
+          if (index < frames - 1) actions.push({ type: "wait", seconds: interval });
+        }
+        const budget = Math.max(3000, Math.min(15000, remaining));
+        const { result, images: got } = await sendPlayCommand("input", { actions, dt: a.dt, max_width: a.max_width || 480, keep_paused: true, budget_ms: budget }, budget + 5000);
+        (got || []).forEach((im) => images.push(im));
+        let frame = firstIndex;
+        for (const entry of (result.actions || [])) if (entry.type === "eval") samples.push({ t: round2(frame++ * interval), value: entry.value, error: entry.error });
+        for (const e of (result.newErrors || [])) errors.push(e);
+        if (result.stopped) { stopped = result.stopped; break; }
+      }
+      markPausedByProbe();
+      return withImages({ frames: images.length, intervalSeconds: round2(interval), durationSeconds: round2(duration), keysHeld: keys, watch, samples: watch ? samples : undefined, newErrors: errors.length ? errors : undefined, stopped, note: "Frames are in time order. Keys are re-pressed at each group of 4 frames, so tiny hiccups every 4th frame are possible." }, images);
     }
 
     case "play_eval": {

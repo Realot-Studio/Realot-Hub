@@ -23,6 +23,9 @@ import { runMcpEditorTool } from "../mcp/McpEditorTools.js";
 import { runMcpProjectTool } from "../mcp/McpProjectTools.js";
 import { runMcpWorkflowTool } from "../mcp/McpWorkflowTools.js";
 import { runMcpPlayTool } from "../mcp/McpPlayTools.js";
+import { runMcpExtraTool } from "../mcp/McpExtraTools.js";
+import { suggest } from "../mcp/McpDocs.js";
+import { captureDigest, diffDigests, formatDiff } from "../mcp/McpDiff.js";
 import { validateComponentProps, formatProblems } from "../mcp/ComponentRules.js";
 
 const STORE_KEY = "realot_ai_bridge";
@@ -41,7 +44,10 @@ const MUTATING = new Set([
   "create_folder", "rename_folder", "move_folder", "delete_folder", "update_prefab", "revert_prefab",
   "unpack_prefab", "duplicate_scene", "delete_script", "set_script_enabled", "bake_navworld",
   "duplicate_entities",
+  "move_entities_to_folder", "rename_script", "restore_snapshot", "update_engine_settings", "editor_eval",
 ]);
+// Raw editor code is never remembered: it must be switched on again every session.
+const session = { allowEval: false };
 const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 
 // ---------------------------------------------------------------- settings
@@ -274,11 +280,32 @@ function need(id) {
 }
 function checkTypes(types) {
   const bad = types.filter((t) => !hasOwn(COMPONENT_REGISTRY, t));
-  if (bad.length) throw new Error("Unknown component type(s): " + bad.join(", ") + ". Valid: " + Object.keys(COMPONENT_REGISTRY).join(", "));
+  if (bad.length) throw new Error("Unknown component type(s): " + bad.join(", ") + "." + bad.map((b) => suggest(b, Object.keys(COMPONENT_REGISTRY))).join("") + " Valid: " + Object.keys(COMPONENT_REGISTRY).join(", "));
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Tools whose effect is bulk data or a save: not worth a before/after comparison.
+const NO_DIFF = new Set(["begin_asset_upload", "append_asset_upload_chunk", "complete_asset_upload", "cancel_asset_upload", "save_project"]);
+function safeDigest() {
+  try {
+    const names = getAllScripts();
+    const game = editorState.game;
+    return captureDigest(world(), Object.fromEntries(names.map((n) => [n, getScriptSource(n)])), game ? { activeId: game.getActiveSceneId(), names: game.getSceneList().map((x) => x.name) } : null);
+  } catch (_) { return null; }
+}
+/** Runs a tool; for editing tools appends a CHANGES summary of what differs before/after. */
 async function runTool(name, a) {
+  const track = MUTATING.has(name) && !NO_DIFF.has(name) && !cfg.readOnly;
+  const before = track ? safeDigest() : null;
+  const res = await runToolCore(name, a);
+  if (track && before && res && !res.isError && Array.isArray(res.content)) {
+    const after = safeDigest();
+    if (after) res.content = [...res.content, { type: "text", text: formatDiff(diffDigests(before, after)) }];
+  }
+  return res;
+}
+
+async function runToolCore(name, a) {
   if (!world()) return err("The editor has no project loaded yet.");
   if (cfg.readOnly && MUTATING.has(name)) return err("Read-only mode is on. Ask the user to turn it off in the AI panel to allow edits.");
   switch (name) {
@@ -454,6 +481,8 @@ async function runTool(name, a) {
       if (workflowResult) return workflowResult;
       const playResult = await runMcpPlayTool(name, a);
       if (playResult) return playResult;
+      const extraResult = await runMcpExtraTool(name, a, { runTool: runToolCore, takeScreenshot, digest: safeDigest, allowEval: session.allowEval, readOnly: cfg.readOnly });
+      if (extraResult) return extraResult;
       return err("Unknown tool: " + name);
     }
   }
@@ -538,6 +567,7 @@ export function openAiBridgePanel() {
     '<div id="cb-last" style="margin-top:8px;color:#4caf7d;min-height:16px;"></div>' +
     '<div style="margin-top:10px;border-top:1px solid #3a3a3a;padding-top:10px;">' +
     '<div><label><input type="checkbox" id="cb-ro"> Read-only \u2014 the AI can look but not change anything</label></div>' +
+    '<div><label title="Lets the AI run JavaScript inside the editor. Off every time the editor reloads."><input type="checkbox" id="cb-eval"> Allow raw editor code (editor_eval) \u2014 advanced, this session only</label></div>' +
     '<div style="margin:2px 0 8px;"><label><input type="checkbox" id="cb-auto"> Connect automatically when the editor opens</label></div>' +
     '<button id="cb-newkey" class="pill-btn" style="font-size:11px;">Make a new private link</button></div>' +
     (!simple ? "" : '<div id="cb-more" style="margin-top:12px;border:1px solid #3a3a3a;border-radius:6px;padding:10px 12px;color:#9aa;font-size:12px;">' +
@@ -554,6 +584,7 @@ export function openAiBridgePanel() {
   if ($("cb-repo")) $("cb-repo").value = cfg.repo;
   if ($("cb-relay")) $("cb-relay").value = cfg.relayUrl;
   $("cb-ro").checked = cfg.readOnly;
+  $("cb-eval").checked = session.allowEval;
   $("cb-auto").checked = cfg.autoConnect;
   refreshLink();
   setStatus(status.state, status.message);
@@ -598,6 +629,7 @@ export function openAiBridgePanel() {
     $("cb-relay").addEventListener("change", (e) => { cfg.relayUrl = normalizeRelay(e.target.value); e.target.value = cfg.relayUrl; saveCfg(); refreshLink(); });
   }
   $("cb-ro").addEventListener("change", (e) => { cfg.readOnly = e.target.checked; saveCfg(); });
+  $("cb-eval").addEventListener("change", (e) => { session.allowEval = e.target.checked; pushLog("warn", "AI raw editor code (editor_eval) " + (session.allowEval ? "ENABLED" : "disabled") + " for this session."); });
   $("cb-auto").addEventListener("change", (e) => { cfg.autoConnect = e.target.checked; cfg.autoConnectChosen = true; saveCfg(); });
   $("cb-copy").addEventListener("click", () => {
     if (!effectiveRelay()) return;

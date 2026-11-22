@@ -8,8 +8,9 @@
  * editor tab through `callEditor(tool, args)`.
  */
 import TOOLS from "./tools.json" with { type: "json" };
+import PROMPTS from "./prompts.json" with { type: "json" };
 
-export const SERVER_INFO = { name: "realot-bridge", version: "1.0.0" };
+export const SERVER_INFO = { name: "realot-bridge", version: "2.0.0" };
 const SUPPORTED = ["2025-06-18", "2025-03-26", "2024-11-05"];
 
 const ok = (id, result) => ({ jsonrpc: "2.0", id, result });
@@ -32,12 +33,13 @@ export async function handleMcpMessage(msg, env) {
       const asked = params && params.protocolVersion;
       return ok(id, {
         protocolVersion: SUPPORTED.includes(asked) ? asked : SUPPORTED[0],
-        capabilities: { tools: { listChanged: false } },
+        capabilities: { tools: { listChanged: false }, resources: { subscribe: false, listChanged: false }, prompts: { listChanged: false } },
         serverInfo: SERVER_INFO,
         instructions:
           "ENGINE DOCUMENTATION RULE: This is the engine's full documentation: https://realot-studio-documentation.pages.dev/ . Use that website for all the information you want about the engine. If you are unsure, use the engine API. Maximize using the engine API and components instead of writing complicated code: the engine has already solved common problems with a simple API, so use it and the user is not overwhelmed with code you provide. Use that URL and open https://realot-studio-documentation.pages.dev/llms.txt , or https://realot-studio-documentation.pages.dev/llms-full.txt for the complete documentation in one file. If you do not know the path of a page, search within the documentation using https://realot-studio-documentation.pages.dev/api/search?q=... (paths look like https://realot-studio-documentation.pages.dev/docs/api/components/transform.html). " +
           "Controls a live Realot 2D game-engine editor. New to the engine? Call get_engine_guide first. To TEST a game call check_project, then play_restart, then play_input (press keys, click, wait, assert, screenshot) and play_screenshot / play_get_state to see what happened; get_console and play_get_errors show script errors. Start with get_editor_state, then inspect entities and list_assets, list_animations, list_tilesets, list_tilemaps, list_navigation_worlds, list_physics_layers, list_scenes, list_tags, or list_prefabs as needed. " +
           "For file imports, call begin_asset_upload, send sequential base64 chunks using the returned chunk_size_bytes with append_asset_upload_chunk, then call complete_asset_upload. Use animation-zip for image ZIPs, animation-gif for GIF clips, animation-sheet for sprite sheets, tileset-sheet or tileset-tile for custom tiles, and frame-asset or tile-asset for loose images that go to the Animation Clips or Tiles folders. Animation frames are listed under Animation Clips and tile images under Tiles (list_assets kind animation / tile); reuse any sprite, frame or tile with add_animation_frames, set_tileset_slot or slice_asset_into_tileset. " +
+          "KNOW THE ENGINE OFFLINE: search_docs(query), get_script_api(topic), get_recipe(name) and the realot:// resources are generated from the engine itself — check them before guessing an API, and run validate_script on every script you write. MOVE FAST AND SAFELY: take snapshot_project before big changes, group many edits in one batch call (it rolls back on error), and use find_entities / get_hierarchy / get_selection instead of listing everything. LOOK: focus_entity or set_viewport_camera, then screenshot; play_record films the running game. Every editing tool ends with a CHANGES line listing exactly what it altered — read it to confirm the edit did what you meant. " +
           "Animation and map edits are undoable where supported (undo). The user must have the editor open with the AI bridge connected; read-only mode blocks project changes.",
       });
     }
@@ -45,6 +47,37 @@ export async function handleMcpMessage(msg, env) {
       return isNotification ? null : ok(id, {});
     case "tools/list":
       return ok(id, { tools: TOOLS });
+    case "resources/list": {
+      try {
+        const res = await env.callEditor("__resources_list", {});
+        const parts = Array.isArray(res.content) ? res.content : [];
+        const list = JSON.parse(parts.filter((p) => p.type === "text").map((p) => p.text).join("") || "[]");
+        return ok(id, { resources: res.isError ? [] : list });
+      } catch { return ok(id, { resources: [] }); }
+    }
+    case "resources/templates/list":
+      return ok(id, { resourceTemplates: [] });
+    case "resources/read": {
+      const uri = params && params.uri;
+      if (typeof uri !== "string" || !uri.startsWith("realot://")) return fail(id, -32602, "Unknown resource uri: " + uri);
+      try {
+        const res = await env.callEditor("__resources_read", { uri });
+        const parts = Array.isArray(res.content) ? res.content : [];
+        const body = parts.filter((p) => p.type === "text").map((p) => p.text).join("");
+        if (res.isError) return fail(id, -32002, body || "Resource not found");
+        return ok(id, { contents: [JSON.parse(body)] });
+      } catch (err) { return fail(id, -32002, String((err && err.message) || err)); }
+    }
+    case "prompts/list":
+      return ok(id, { prompts: PROMPTS.map(({ name, description, arguments: args }) => ({ name, description, arguments: args })) });
+    case "prompts/get": {
+      const prompt = PROMPTS.find((p) => p.name === (params && params.name));
+      if (!prompt) return fail(id, -32602, "Unknown prompt: " + (params && params.name));
+      const given = (params && params.arguments) || {};
+      for (const a of prompt.arguments) if (a.required && !String(given[a.name] || "").trim()) return fail(id, -32602, "Missing argument: " + a.name);
+      const textOut = prompt.template.replace(/\{(\w+)\}/g, (_, k) => String(given[k] ?? ""));
+      return ok(id, { description: prompt.description, messages: [{ role: "user", content: { type: "text", text: textOut } }] });
+    }
     case "tools/call": {
       const name = params && params.name;
       const args = (params && params.arguments) || {};

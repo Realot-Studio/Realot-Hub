@@ -6,6 +6,13 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get editor state",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -20,6 +27,13 @@
         }
       },
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List entities",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -36,6 +50,13 @@
         "id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get entity",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -65,6 +86,13 @@
         "name"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Create entity",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -90,6 +118,13 @@
         "props"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Update component",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -113,6 +148,13 @@
         "type"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Add component",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -133,6 +175,13 @@
         "type"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Remove component",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -152,6 +201,13 @@
         "ids"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Delete entities",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -171,6 +227,13 @@
         "ids"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Select entities",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -180,6 +243,13 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List scripts",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -196,6 +266,13 @@
         "name"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get script",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -216,6 +293,13 @@
         "source"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Write script",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -236,6 +320,13 @@
         "scriptName"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Attach script",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -252,6 +343,13 @@
         "playing"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Set playing",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -266,15 +364,29 @@
         }
       },
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get console",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
     "name": "screenshot",
-    "description": "Image of the EDITOR scene viewport (with gizmos, grid and selection) — for checking level layout while building. To see the real game as a player does, use play_screenshot.",
+    "description": "Image of the EDITOR scene viewport (with gizmos, grid and selection) \u2014 for checking level layout while building. To see the real game as a player does, use play_screenshot.",
     "inputSchema": {
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Screenshot",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -284,6 +396,13 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Undo",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -293,6 +412,13 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Redo",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -302,6 +428,13 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Save project",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -333,6 +466,13 @@
         }
       },
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List assets",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -409,6 +549,13 @@
         "purpose"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Begin asset upload",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -435,6 +582,13 @@
         "chunk_base64"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Append asset upload chunk",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -451,6 +605,13 @@
         "upload_id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Complete asset upload",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -467,6 +628,13 @@
         "upload_id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Cancel asset upload",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -499,6 +667,13 @@
         "name"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Rename asset",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -530,6 +705,13 @@
         "kind"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Delete asset",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -539,6 +721,13 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List animations",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -567,6 +756,13 @@
         "panel"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Open editor panel",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -595,6 +791,13 @@
         "entity_id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Create animation clip",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -640,6 +843,13 @@
         "fields"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Update animation clip",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -660,6 +870,13 @@
         "clip_id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Delete animation clip",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -690,6 +907,13 @@
         "to_index"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Move animation frame",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -715,6 +939,13 @@
         "frame_index"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Delete animation frame",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -724,6 +955,13 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List tilesets",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -765,6 +1003,13 @@
         "patch"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Update tileset",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -798,6 +1043,13 @@
         "asset_keys"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Add animation frames",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -825,6 +1077,13 @@
         "asset_key"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Set tileset slot",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -845,6 +1104,13 @@
         "asset_key"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Slice asset into tileset",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -854,6 +1120,13 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List tilemaps",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -900,6 +1173,13 @@
         "cells"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Paint tilemap",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -909,6 +1189,13 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List navigation worlds",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -963,6 +1250,13 @@
         "cells"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Paint navigation cells",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1023,6 +1317,13 @@
         "patch"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Update navigation world",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1032,6 +1333,13 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List navigation areas",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -1055,6 +1363,13 @@
         "name"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Set navigation area name",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1064,6 +1379,13 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List physics layers",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -1087,6 +1409,13 @@
         "name"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Set physics layer name",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1119,6 +1448,13 @@
         "collides_with"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Set collider layer filter",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1151,6 +1487,13 @@
         "tool"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Set editor tool",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -1173,6 +1516,13 @@
         "patch"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Update entity",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1183,6 +1533,13 @@
       "properties": {},
       "required": [],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List scenes",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -1202,6 +1559,13 @@
       },
       "required": [],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Create scene",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1219,6 +1583,13 @@
         "scene_id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Switch scene",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1241,6 +1612,13 @@
         "name"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Rename scene",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1262,6 +1640,13 @@
         "scene_id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Delete scene",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1272,6 +1657,13 @@
       "properties": {},
       "required": [],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List tags",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -1289,6 +1681,13 @@
         "tag"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Add tag",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1306,6 +1705,13 @@
         "tag"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Delete tag",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1316,6 +1722,13 @@
       "properties": {},
       "required": [],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List prefabs",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -1337,6 +1750,13 @@
         "id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Create prefab",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1366,6 +1786,13 @@
         "prefab_id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Instantiate prefab",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1388,6 +1815,13 @@
         "name"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Rename prefab",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1409,6 +1843,13 @@
         "prefab_id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Delete prefab",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1419,6 +1860,13 @@
       "properties": {},
       "required": [],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List folders",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -1440,6 +1888,13 @@
         "name"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Create folder",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1462,6 +1917,13 @@
         "name"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Rename folder",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1483,6 +1945,13 @@
         "folder_id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Move folder",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1500,6 +1969,13 @@
         "folder_id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Delete folder",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1529,6 +2005,13 @@
         "id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Update prefab",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1546,6 +2029,13 @@
         "id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Revert prefab",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1563,6 +2053,13 @@
         "id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Unpack prefab",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1580,6 +2077,13 @@
         "scene_id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Duplicate scene",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1601,6 +2105,13 @@
         "name"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Delete script",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1623,6 +2134,13 @@
         "enabled"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Set script enabled",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1640,6 +2158,13 @@
         "id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Bake navworld",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1657,6 +2182,13 @@
         "paused"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Set paused",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1686,6 +2218,13 @@
         "format"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Export game",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1708,6 +2247,13 @@
         "chunk_index"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Read export chunk",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -1725,6 +2271,13 @@
         "export_id"
       ],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Release export",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1744,6 +2297,13 @@
       },
       "required": [],
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Download project zip",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1765,6 +2325,13 @@
         }
       },
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get engine guide",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -1782,6 +2349,13 @@
       "required": [
         "type"
       ]
+    },
+    "annotations": {
+      "title": "Describe component",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -1791,6 +2365,13 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Check project",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -1823,6 +2404,13 @@
       "required": [
         "ids"
       ]
+    },
+    "annotations": {
+      "title": "Duplicate entities",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -1832,6 +2420,13 @@
       "type": "object",
       "properties": {},
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Clear console",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -1853,6 +2448,13 @@
         }
       },
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Play restart",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -2047,6 +2649,13 @@
       "required": [
         "actions"
       ]
+    },
+    "annotations": {
+      "title": "Play input",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -2073,6 +2682,13 @@
         }
       },
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Play step",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -2097,6 +2713,13 @@
         }
       },
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Play screenshot",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -2131,6 +2754,13 @@
         }
       },
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Play get state",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -2148,6 +2778,13 @@
       "required": [
         "entity"
       ]
+    },
+    "annotations": {
+      "title": "Play get entity",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   },
   {
@@ -2164,6 +2801,13 @@
       "required": [
         "expression"
       ]
+    },
+    "annotations": {
+      "title": "Play eval",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
     }
   },
   {
@@ -2178,6 +2822,654 @@
         }
       },
       "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Play get errors",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "search_docs",
+    "description": "Search the engine's built-in docs (guide, recipes, script API, every component's fields) without internet. Returns ranked results with a snippet and a realot:// resource uri you can read in full. Use this BEFORE guessing an API.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Words to look for, e.g. 'raycast', 'trigger collision', 'Light'"
+        },
+        "limit": {
+          "type": "number",
+          "description": "Max results (default 8, max 20)"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Search docs",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "get_script_api",
+    "description": "Exact signatures and docs of the script globals, generated from the engine source. Omit topic for the full overview, or pass a global like 'physics', 'input', 'mouse', 'nav', 'scene', 'mathx'.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string",
+          "description": "Global name, e.g. physics"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get script api",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "get_recipe",
+    "description": "Tested building recipes (platformer player, collectible+score, win/lose/restart, timers+spawning, enemy chase with navigation, UI button). Omit name to list them.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get recipe",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "validate_script",
+    "description": "Check a script BEFORE running it: syntax errors, import/export/class misuse, misspelled lifecycle functions (onUpdate typos), arrow-function lifecycles, and calls to functions that are not script globals (with 'did you mean'). Pass source, or the name of a saved script, or nothing to check every script.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Validate script",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "find_entities",
+    "description": "Find entities in the active scene by exact name, name substring, tag, component type, active flag, or distance from a point. Cheaper than list_entities on big scenes.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "name_contains": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "component": {
+          "type": "string",
+          "description": "Component type, e.g. Collider2D"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "near": {
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "radius": {
+              "type": "number",
+              "description": "Default 200"
+            }
+          },
+          "required": [
+            "x",
+            "y"
+          ],
+          "additionalProperties": false
+        },
+        "limit": {
+          "type": "number",
+          "description": "Default 100, max 500"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Find entities",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "get_selection",
+    "description": "The entities currently selected in the editor (what the user is looking at).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get selection",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "get_hierarchy",
+    "description": "The Hierarchy panel as a tree: folders (nested) containing their entities, plus entities not in any folder.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get hierarchy",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "move_entities_to_folder",
+    "description": "Move entities into a Hierarchy folder (or to the top level when folder_id is omitted). Undoable.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "entity_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "folder_id": {
+          "type": "string",
+          "description": "Folder id from list_folders; omit for top level"
+        }
+      },
+      "required": [
+        "entity_ids"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Move entities to folder",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "get_viewport_camera",
+    "description": "The editor Scene view's zoom and which world rectangle is visible.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get viewport camera",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "set_viewport_camera",
+    "description": "Pan/zoom the editor Scene view so a screenshot shows what you want. x/y = world point to center on; zoom_percent 14-600. Does not change the project.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "zoom_percent": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Set viewport camera",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "focus_entity",
+    "description": "Center and zoom the Scene view on an entity (like pressing F) and select it by default. Does not change the project.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "entity_id": {
+          "type": "string"
+        },
+        "half_width": {
+          "type": "number",
+          "description": "World half-extent to fit; default from size"
+        },
+        "half_height": {
+          "type": "number"
+        },
+        "select": {
+          "type": "boolean",
+          "description": "Default true"
+        }
+      },
+      "required": [
+        "entity_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Focus entity",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "get_engine_settings",
+    "description": "Editor/engine performance settings: game FPS cap, editor FPS, vsync, background rendering, lights-off in Scene view.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get engine settings",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "update_engine_settings",
+    "description": "Change engine settings (validated). gameFps must be 30, 60, 120 or 0 (unlimited).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "patch": {
+          "type": "object",
+          "description": "e.g. {\"gameFps\":30}"
+        }
+      },
+      "required": [
+        "patch"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Update engine settings",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "search_scripts",
+    "description": "Search every script's source (text or regex). Returns script, line number and the line.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "regex": {
+          "type": "boolean"
+        },
+        "case_sensitive": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Search scripts",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "replace_in_scripts",
+    "description": "Find-and-replace across scripts. DRY RUN BY DEFAULT: reports what would change; pass dry_run:false to apply. Script edits are not covered by undo, so take snapshot_project first for big changes.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "find": {
+          "type": "string"
+        },
+        "replace": {
+          "type": "string"
+        },
+        "regex": {
+          "type": "boolean"
+        },
+        "scripts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Limit to these scripts"
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Default true"
+        }
+      },
+      "required": [
+        "find",
+        "replace"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Replace in scripts",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "rename_script",
+    "description": "Rename a script and update every entity that uses it (same as renaming in the script editor).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "old_name": {
+          "type": "string"
+        },
+        "new_name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "old_name",
+        "new_name"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Rename script",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "snapshot_project",
+    "description": "Save a restore point of ALL scenes and scripts in memory (assets, prefabs, tags and physics layers are not included; max 10, lost when the editor tab closes). Take one before risky or large changes.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Snapshot project",
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "list_snapshots",
+    "description": "List restore points taken in this editor session.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "List snapshots",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "restore_snapshot",
+    "description": "Roll scenes and scripts back to a snapshot. Resets undo history.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "snapshot_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "snapshot_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Restore snapshot",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "delete_snapshot",
+    "description": "Discard a restore point.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "snapshot_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "snapshot_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Delete snapshot",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "batch",
+    "description": "Run many tool calls in ONE request (max 50) \u2014 far faster than one call each. Operations run in order; by default it stops at the first error and ROLLS BACK scenes+scripts to before the batch (rollback_on_error:false keeps partial work). Not allowed inside a batch: asset uploads, export_game, set_playing, play_restart, restore_snapshot. Screenshots inside a batch are returned as images. The result includes a 'changes' summary of what differs afterwards.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tool": {
+                "type": "string"
+              },
+              "arguments": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "tool"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "stop_on_error": {
+          "type": "boolean",
+          "description": "Default true"
+        },
+        "rollback_on_error": {
+          "type": "boolean",
+          "description": "Default true"
+        },
+        "screenshots": {
+          "type": "boolean",
+          "description": "Return a screenshot of the editor before and after the batch (default false)"
+        }
+      },
+      "required": [
+        "operations"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Batch",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "editor_eval",
+    "description": "ADVANCED ESCAPE HATCH: run JavaScript inside the editor with `api` (editorState, world, game, COMPONENT_REGISTRY, snapshotNow, saveScript, ...). Only works if the user ticked 'Allow raw editor code' in the AI panel this session. Prefer specific tools; call snapshotNow('scene') before mutating so the change is undoable. Returns the value of the expression / return statement.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "e.g. api.world.getAllEntities().length"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Editor eval",
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "get_performance",
+    "description": "Editor frame rate (sampled), entity count, component counts and JS heap \u2014 to spot heavy scenes.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sample_ms": {
+          "type": "number",
+          "description": "Sample length, default 600, max 3000"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Get performance",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "play_record",
+    "description": "Record a short filmstrip of the RUNNING game: N screenshots evenly spaced over a duration, optionally with keys held the whole time and an expression sampled each frame (e.g. \"findFirst('Player').x\"). Use it to judge movement, animation and game feel. Game must be running (play_restart first).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "duration_seconds": {
+          "type": "number",
+          "description": "Game seconds to cover, 0.2-10 (default 2)"
+        },
+        "frames": {
+          "type": "number",
+          "description": "Screenshots, 2-12 (default 6)"
+        },
+        "keys_held": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Keys held throughout, e.g. [\"ArrowRight\"]"
+        },
+        "watch": {
+          "type": "string",
+          "description": "JS expression evaluated at every frame"
+        },
+        "max_width": {
+          "type": "number",
+          "description": "Frame width in px (default 480)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "title": "Play record",
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
     }
   }
 ]

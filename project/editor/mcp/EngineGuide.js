@@ -11,11 +11,17 @@ const OVERVIEW = `REALOT STUDIO — QUICK GUIDE FOR AI BUILDERS
 
 ENGINE DOCUMENTATION RULE: This is the engine's full documentation: https://realot-studio-documentation.pages.dev/ . Use that website for all the information you want about the engine. If you are unsure, use the engine API. Maximize using the engine API and components instead of writing complicated code: the engine has already solved common problems with a simple API, so use it and the user is not overwhelmed with code you provide. Use that URL and open https://realot-studio-documentation.pages.dev/llms.txt , or https://realot-studio-documentation.pages.dev/llms-full.txt for the complete documentation in one file. If you do not know the path of a page, search within the documentation using https://realot-studio-documentation.pages.dev/api/search?q=... (paths look like https://realot-studio-documentation.pages.dev/docs/api/components/transform.html).
 
+KNOW THE ENGINE FIRST (offline, always matches this editor's version)
+- search_docs(query): ranked results across the guide, recipes, script API and every component. get_script_api(topic) gives exact signatures (physics, input, mouse, nav, scene, mathx...). get_recipe(name) has tested recipes. The same content is exposed as realot:// MCP resources.
+- Never guess an API name: look it up, then write the script, then run validate_script on it (catches syntax errors, misspelled lifecycle functions and unknown function calls).
+
 WORKFLOW THAT WORKS
-1. get_editor_state, list_scenes, list_entities, list_assets: see what exists before changing anything.
+0. Before big or risky changes: snapshot_project (restore_snapshot rolls back scenes + scripts). Group many edits into one batch call: it runs in order, and on failure rolls back automatically.
+1. get_editor_state, list_scenes, find_entities / get_hierarchy / get_selection, list_assets: see what exists before changing anything.
 2. Build: create_entity (with components), write_script + attach_script, paint_tilemap, etc. Use describe_component(type) to see a component's fields, defaults and allowed values.
 3. check_project: static checks (Main Camera, missing scripts/assets, Rigidbody without Collider, script syntax).
 4. Test like a player: play_restart, then play_input with key presses / clicks / waits / assert / screenshot. Read play_get_state for positions and script variables. get_console / play_get_errors for script errors.
+4b. To LOOK at the editor: focus_entity or set_viewport_camera, then screenshot. get_performance shows editor FPS and entity/component counts.
 5. Fix what you saw, clear_console, test again. Repeat until the screenshots and assertions show the game really works. save_project when done.
 
 COORDINATES
@@ -44,6 +50,9 @@ TESTING TOOLS (what they do)
 Games run on a fixed time step while testing, so results are repeatable. 60 frames = 1 game second.`;
 
 const TOPICS = {
+  tools: `TOOL CHEAT SHEET
+Query: find_entities (name/tag/component/near), get_selection, get_hierarchy, get_entity. Edit: create_entity, update_component, update_entity, move_entities_to_folder, duplicate_entities. Scripts: write_script, attach_script, validate_script, search_scripts, replace_in_scripts (dry run first), rename_script. Safety: snapshot_project, restore_snapshot, batch (rolls back on error), undo. View: focus_entity, set_viewport_camera, screenshot. Settings: get_engine_settings, update_engine_settings. Escape hatch: editor_eval (only when the user enabled it in the AI panel; prefer specific tools).`,
+
   testing: `TESTING RECIPES
 A. Does the player move?
   play_restart, then play_input actions: [{"type":"eval","expression":"(global.x0 = findFirst('Player').x)"}, {"type":"hold","keys":["right"],"seconds":1}, {"type":"assert","expression":"findFirst('Player').x > global.x0 + 20","message":"player moved right"}, {"type":"screenshot","label":"after moving"}]

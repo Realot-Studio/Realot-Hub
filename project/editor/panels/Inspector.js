@@ -177,6 +177,8 @@ export function renderInspector() {
 /** The Inspector for exactly one object. */
 function renderEntityInspector(entity) {
   let body = "";
+  // Used by the Tilemap, NavAgent and Joint2D sections below to list other entities.
+  const world = editorState.world;
 
   const transform = entity.getComponent(TRANSFORM);
   if (transform) {

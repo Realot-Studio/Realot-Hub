@@ -1,0 +1,26 @@
+[
+  {
+    "name": "build_game",
+    "description": "Plan, build and test a complete small game from a one-line idea.",
+    "arguments": [{ "name": "idea", "description": "What the game is, e.g. 'a coin-collecting platformer'", "required": true }],
+    "template": "Build this game in the open Realot editor: {idea}\n\n1. Read the engine guide (get_engine_guide) and the matching recipes (get_recipe, search_docs).\n2. Take a restore point with snapshot_project.\n3. Look at what exists (get_editor_state, list_entities, list_assets).\n4. Build the scene with batch calls (create_entity with components, write_script + attach_script). Run validate_script on every script.\n5. check_project, then play_restart and test every mechanic with play_input + assert. Look at play_screenshot.\n6. Fix everything you find, re-test, then save_project. Finish with a short summary of what was built and what the controls are."
+  },
+  {
+    "name": "debug_game",
+    "description": "Find and fix why something in the game is broken.",
+    "arguments": [{ "name": "problem", "description": "What is going wrong", "required": true }],
+    "template": "Debug this problem in the open Realot game: {problem}\n\n1. get_console and check_project for errors; validate_script on the scripts involved.\n2. Reproduce it: play_restart, then play_input to do what the player does; use play_get_state / play_get_entity / play_eval to inspect live values and play_screenshot to see it.\n3. Form a hypothesis, take snapshot_project, fix it with the smallest change, then re-run the exact same reproduction and confirm the fix with an assert.\n4. Report the root cause and what you changed."
+  },
+  {
+    "name": "review_project",
+    "description": "Audit the project for problems and polish opportunities without changing anything.",
+    "arguments": [],
+    "template": "Audit the open Realot project read-only: check_project, validate_script (all scripts), get_hierarchy, list_scenes, list_assets, get_performance. Play-test the main loop with play_input. Report problems by severity (broken, risky, polish) with the exact entity/script and a suggested fix for each. Do not change anything."
+  },
+  {
+    "name": "add_feature",
+    "description": "Add one feature to the existing game safely.",
+    "arguments": [{ "name": "feature", "description": "The feature to add", "required": true }],
+    "template": "Add this feature to the existing Realot game: {feature}\n\nFirst understand the current project (get_editor_state, find_entities, get_script / search_scripts for related code, search_docs for the engine API). Take snapshot_project. Prefer built-in components over custom code. Implement it with as few batch calls as possible, validate_script, then play-test it and a regression pass over the existing mechanics. Roll back with restore_snapshot if it goes badly."
+  }
+]

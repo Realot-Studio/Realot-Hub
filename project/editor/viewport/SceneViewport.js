@@ -1902,6 +1902,11 @@ export function getZoomPercent() {
   return viewportCamera ? viewportCamera.zoomPercent : 100;
 }
 
+/** Editor-camera access for the AI bridge (focus_entity / set_viewport_camera). */
+export function getViewportCamera() {
+  return viewportCamera;
+}
+
 /**
  * Captures what the game's Main Camera sees (no grid, gizmos or camera
  * frame) as a small image data URL, for the Hub's project cards.
