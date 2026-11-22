@@ -10,6 +10,7 @@
 import { editorState, pushLog, markDirty, markClean, markFileClean } from "./EditorState.js";
 import { adoptFileHandle, isFileSyncActive, writeProjectToFile } from "./FileSync.js";
 import { openAiBridgePanel } from "../bridge/AiBridge.js";
+import { wheelZoomFactor } from "../viewport/WheelZoom.js";
 
 async function showSaveFilePickerForProject(suggestedName) {
   try {
@@ -2648,7 +2649,7 @@ case "select-scene-file": {
       e.preventDefault();
       const a = editorState.anim;
       const z0 = a.previewZoom || 1;
-      const z1 = Math.min(40, Math.max(0.25, z0 * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));
+      const z1 = Math.min(40, Math.max(0.25, z0 * wheelZoomFactor(e, 0.0012)));
       if (z1 === z0) return;
       const r = z1 / z0;
       const rect = box.getBoundingClientRect();

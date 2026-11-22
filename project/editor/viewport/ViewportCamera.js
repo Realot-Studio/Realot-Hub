@@ -6,6 +6,7 @@
  */
 
 import { editorState } from "../state/EditorState.js";
+import { wheelZoomFactor } from "./WheelZoom.js";
 
 const MIN_ZOOM = 0.14;
 // Maximum editor zoom-in; zoom-out is handled by MIN_ZOOM.
@@ -81,9 +82,8 @@ export class ViewportCamera {
         const rect = el.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-        const direction = e.deltaY < 0 ? 1 : -1;
-        const factor = 1 + direction * 0.1;
-        this.zoomAt(mouseX, mouseY, factor);
+        // Proportional, device-normalized zoom (see WheelZoom.js).
+        this.zoomAt(mouseX, mouseY, wheelZoomFactor(e));
       },
       { passive: false }
     );
