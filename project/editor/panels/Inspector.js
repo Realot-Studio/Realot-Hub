@@ -1068,7 +1068,7 @@ function renderEntityInspector(entity) {
             "/>"
         ) +
         '<div class="static-body-note" style="padding:6px 4px;color:#8a93a0;font-size:11px;">' +
-        "Detects 3D Audio Sources within this radius, shown as a circle around this object in the Scene view. In scripts, use this.ear.sourcesInRange, this.ear.canHear(name), or the onHearSound(source)/onLoseSound(source) lifecycle functions. 2D audio is never detected." +
+        "Detects 3D Audio Sources within this radius, shown as a circle around this object in the Scene view. In scripts, use this.ear.sourcesInRange, this.ear.canHear(name), or the onHear(sound)/onLoseSound(sound) lifecycle functions (sound.name, sound.tag, sound.distance, sound.is(\"Name\")). 2D audio is never detected." +
         "</div>" +
         '<button class="removecomp-btn" data-action="remove-component" data-component="AudioListener" style="margin-top:6px;">Remove Component</button>'
     );

@@ -69,11 +69,14 @@ const ENGINE_GLOBALS = [
 // etc., kept in sync with MATH_API in ScriptIntelliSense.js.
 const MATHX_MEMBERS = ["lerp", "clamp", "moveToward", "remap", "approximately"];
 
+// Members of the `sound` parameter of onHear / onLoseSound (see runtime/scripting/SoundInfo.js).
+const SOUND_MEMBERS = ["name", "tag", "clip", "distance", "volume", "pitch", "loop", "destroyed", "is", "entity", "listener"];
+
 const ENGINE_LIFECYCLE = [
   "onStart", "onClone", "onUpdate", "onClick", "onFixedUpdate", "onCollision",
   "onCollisionEnter", "onCollisionStay", "onCollisionExit", "onTriggerEnter",
   "onTriggerExit", "onMessage", "onDestroy", "onEnable", "onDisable",
-  "onStateEnter", "onStateUpdate", "onStateExit", "onHearSound", "onLoseSound",
+  "onStateEnter", "onStateUpdate", "onStateExit", "onHear", "onHearSound", "onLoseSound", "onLooseSound",
 ];
 
 const ENGINE_OBJECTS = [
@@ -483,6 +486,18 @@ export function applyRealotDecorations(monaco, editorInstance, model, scriptName
 
   const membersPattern = "\\.(" + ENGINE_MEMBERS.join("|") + ")\\b";
   addMatches(new RegExp(membersPattern, "g"), "realot-token-member");
+
+  // onHear(sound) / onLoseSound(sound): the members of that parameter (sound.name, sound.distance,
+  // sound.is("X") ...). Scoped to the parameter name actually declared on those callbacks, so a
+  // normal variable's own .name / .distance / .is stays uncolored.
+  const soundParams = new Set(["sound"]);
+  const soundFnRx = /\bfunction\s+(?:onHear|onHearSound|onLoseSound|onLooseSound)\s*\(\s*([A-Za-z_$][\w$]*)/g;
+  let soundFn;
+  while ((soundFn = soundFnRx.exec(text))) soundParams.add(soundFn[1]);
+  addMatches(
+    new RegExp("\\b(?:" + [...soundParams].join("|") + ")\\.(" + SOUND_MEMBERS.join("|") + ")\\b", "g"),
+    "realot-token-member"
+  );
 
   // this.rigidbody.type / someEntity.rigidbody.type — "type" is deliberately
   // left OUT of ENGINE_MEMBERS above (too generic, would light up any

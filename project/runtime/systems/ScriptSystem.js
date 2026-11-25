@@ -42,12 +42,19 @@
  *                         "default"). Use this.state.current to branch.
  *   onStateExit()      — fired by this.state.change(name) right before
  *                         switching AWAY from the current state.
- *   onHearSound(source) — fired by AudioListenerSystem the frame a 3D
+ *   onHear(sound)      — fired by AudioListenerSystem the frame a 3D
  *                         AudioSource enters this entity's Audio
  *                         Listener radius (needs an Audio Listener
  *                         component — see components/AudioListener.js).
- *   onLoseSound(source)  — the frame that source leaves range (or is
- *                         destroyed while in range).
+ *                         `sound` has .name .tag .id .x .y .clip .volume
+ *                         .distance .destroyed and .is("Name") — see
+ *                         scripting/SoundInfo.js. onHearSound(sound) is
+ *                         the same event under its original name.
+ *   onLoseSound(sound)  — the frame that sound leaves range (or is
+ *                         destroyed while in range; then `sound` is a
+ *                         snapshot with .destroyed === true, never null).
+ *                         onLooseSound is accepted too, because "lose"
+ *                         and "loose" are easy to mix up.
  *
  * FAULT ISOLATION: a thrown error inside one lifecycle CALL is caught
  * right there and reported — it does NOT disable the whole script
@@ -86,6 +93,7 @@ import { SCRIPT } from "../components/Script.js";
 import { stripCastSyntax } from "../scripting/CastSyntax.js";
 import { applyInspectValues } from "../scripting/InspectSyntax.js";
 import { resolveTweenEasing } from "../scripting/TweenEasing.js";
+import { createSoundInfo, snapshotSound } from "../scripting/SoundInfo.js";
 
 const FIXED_TIMESTEP = 1 / 60;
 
@@ -187,6 +195,8 @@ export class ScriptSystem {
     this.scriptApi = scriptApi;
     /** @type {Map<string, Array<{handlers:object, context:object, scriptName:string, enabled:boolean, started:boolean}>>} */
     this.instances = new Map();
+    /** Remembered look of each sound a listener heard, so onLoseSound can describe a sound whose entity is already gone. key: listenerId|sourceId */
+    this._heardSounds = new Map();
     this._started = false;
     this._fixedAccumulator = 0;
     /** Real (unscaled) frame time pushed in by GameLoop — see time.unscaledDeltaTime. */
@@ -563,7 +573,7 @@ export class ScriptSystem {
         "onStart", "onUpdate", "onClick", "onFixedUpdate", "onCollision",
         "onCollisionEnter", "onCollisionStay", "onCollisionExit", "onTriggerEnter", "onTriggerExit",
         "onMessage", "onClone", "onDestroy", "onEnable", "onDisable",
-        "onStateEnter", "onStateUpdate", "onStateExit", "onHearSound", "onLoseSound",
+        "onStateEnter", "onStateUpdate", "onStateExit", "onHear", "onHearSound", "onLoseSound", "onLooseSound",
       ];
       const customNames = this._extractTopLevelFunctionNames(source, lifecycleNames);
       const risky = this._extractRiskyAssignedFunctionNames(
@@ -1689,31 +1699,46 @@ export class ScriptSystem {
     const instances = this.instances.get(listenerEntityId);
     if (!instances) return;
     const sourceEntity = world.getEntity(sourceEntityId);
-    const sourceContext = sourceEntity ? this.scriptApi.createEntityContext(sourceEntity) : null;
-    for (const inst of instances) {
-      if (!inst.enabled || !inst.handlers.onHearSound) continue;
-      try {
-        this._invoke(inst, inst.handlers.onHearSound, sourceContext);
-      } catch (err) {
-        this._reportError(inst.scriptName, err, "onHearSound");
-      }
-    }
+    if (sourceEntity) this._heardSounds.set(listenerEntityId + "|" + sourceEntityId, snapshotSound(sourceEntity));
+    const sound = this._makeSound(listenerEntityId, sourceEntityId, world, sourceEntity);
+    this._fireSoundHandlers(instances, ["onHear", "onHearSound"], sound);
   }
 
   /** Counterpart to fireHearSound — fired once per AudioSource entity
    *  that just left a listener's radius (or was destroyed/removed
-   *  while in range). Same shape as fireHearSound; see its doc comment. */
+   *  while in range). If the entity is gone, `sound` is a snapshot of
+   *  what it was (never null) — see scripting/SoundInfo.js. */
   fireLoseSound(listenerEntityId, sourceEntityId, world) {
+    const key = listenerEntityId + "|" + sourceEntityId;
     const instances = this.instances.get(listenerEntityId);
-    if (!instances) return;
     const sourceEntity = world.getEntity(sourceEntityId);
+    const remembered = this._heardSounds.get(key) || null;
+    this._heardSounds.delete(key);
+    if (!instances) return;
+    const sound = this._makeSound(listenerEntityId, sourceEntityId, world, sourceEntity, remembered);
+    this._fireSoundHandlers(instances, ["onLoseSound", "onLooseSound"], sound);
+  }
+
+  /** Builds the friendly `sound` object (see scripting/SoundInfo.js). */
+  _makeSound(listenerEntityId, sourceEntityId, world, sourceEntity, remembered) {
+    const listenerEntity = world.getEntity(listenerEntityId);
     const sourceContext = sourceEntity ? this.scriptApi.createEntityContext(sourceEntity) : null;
+    const listenerContext = listenerEntity ? this.scriptApi.createEntityContext(listenerEntity) : null;
+    return createSoundInfo(sourceEntity, sourceContext, listenerEntity, listenerContext, remembered || (sourceEntity ? snapshotSound(sourceEntity) : null));
+  }
+
+  /** Calls every defined handler named in `names` on each enabled script instance, isolating errors per call. */
+  _fireSoundHandlers(instances, names, sound) {
     for (const inst of instances) {
-      if (!inst.enabled || !inst.handlers.onLoseSound) continue;
-      try {
-        this._invoke(inst, inst.handlers.onLoseSound, sourceContext);
-      } catch (err) {
-        this._reportError(inst.scriptName, err, "onLoseSound");
+      if (!inst.enabled) continue;
+      for (const name of names) {
+        const handler = inst.handlers[name];
+        if (!handler) continue;
+        try {
+          this._invoke(inst, handler, sound);
+        } catch (err) {
+          this._reportError(inst.scriptName, err, name);
+        }
       }
     }
   }

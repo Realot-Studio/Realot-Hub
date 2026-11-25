@@ -89,6 +89,7 @@ import { getAllScripts, getScriptSource } from "./ScriptStorage.js";
 import { NAV_API_OPTION_FIELDS } from "../../runtime/scripting/NavAPI.js";
 import { TWEEN_EASING_NAMES } from "../../runtime/scripting/TweenEasing.js";
 import { getNamedNavAreas } from "../state/NavAreas.js";
+import { getNamedLayers } from "../state/PhysicsLayers.js";
 import {
   BASE_OBJECT_API,
   UNKNOWN_HELPER_API,
@@ -744,8 +745,10 @@ const LIFECYCLE_API = [
   { label: "onStateEnter()", detail: "Called right after this.state.change(name) switches TO a new state. No component needed.", insert: "onStateEnter()", kind: "Function" },
   { label: "onStateUpdate(dt)", detail: "Called every frame, right after onUpdate, regardless of whether this.state.change() was ever called (starts in \"default\"). No component needed.", insert: "onStateUpdate(dt)", kind: "Function" },
   { label: "onStateExit()", detail: "Called right before this.state.change(name) switches AWAY from the current state. No component needed.", insert: "onStateExit()", kind: "Function" },
-  { label: "onHearSound(source)", detail: "Called the frame a 3D Audio Source enters this entity's Audio Listener radius. Requires an Audio Listener component.", insert: "onHearSound(source)", kind: "Function" },
-  { label: "onLoseSound(source)", detail: "Called the frame a 3D Audio Source leaves this entity's Audio Listener radius (or is destroyed while in range). Requires an Audio Listener component.", insert: "onLoseSound(source)", kind: "Function" },
+  { label: "onHear(sound)", detail: "Called the frame a 3D Audio Source enters this entity's Audio Listener radius. sound.name, sound.tag, sound.clip, sound.distance, sound.is(\"Name\"). Requires an Audio Listener component.", insert: "onHear(sound)", kind: "Function" },
+  { label: "onHearSound(sound)", detail: "Same as onHear(sound) — the original name. Called the frame a 3D Audio Source enters this entity's Audio Listener radius.", insert: "onHearSound(sound)", kind: "Function" },
+  { label: "onLoseSound(sound)", detail: "Called the frame a 3D Audio Source leaves this entity's Audio Listener radius (or is destroyed while in range — sound.destroyed is then true). Requires an Audio Listener component.", insert: "onLoseSound(sound)", kind: "Function" },
+  { label: "onLooseSound(sound)", detail: "Same as onLoseSound(sound) — accepted because lose/loose are easy to mix up.", insert: "onLooseSound(sound)", kind: "Function" },
 ];
 
 const STATE_API = [
@@ -1028,6 +1031,22 @@ const RAYCAST_OPTS_API = [
 // shape as `this`/find() results, so the full THIS_SHORTCUTS_BASE list is
 // reused for it rather than a separate hand-maintained duplicate.
 const OTHER_PARAM_API = THIS_SHORTCUTS_BASE;
+// Members of the `sound` parameter of onHear / onHearSound / onLoseSound / onLooseSound (see
+// runtime/scripting/SoundInfo.js). `sound` is the Audio Source's entity plus these extras, so the
+// usual entity members (x, y, tag, ...) are offered after them.
+const SOUND_PARAM_API = [
+  { label: "name", detail: "Name of the object that makes the sound (the entity name), e.g. \"Siren\"", insert: "name", kind: "Property" },
+  { label: "tag", detail: "Tag of the object that makes the sound", insert: "tag", kind: "Property" },
+  { label: "clip", detail: "Name of the audio asset the Audio Source plays (\"\" if none)", insert: "clip", kind: "Property" },
+  { label: "distance", detail: "How far the sound is from this listener right now, in world units", insert: "distance", kind: "Property" },
+  { label: "volume", detail: "The Audio Source's base volume, 0 to 1", insert: "volume", kind: "Property" },
+  { label: "is(nameOrTag)", detail: "True if the sound's name OR tag equals this text (ignores upper/lower case): if (sound.is(\"Siren\")) { ... }", insert: "is(\"$1\")", kind: "Method", snippet: true },
+  { label: "destroyed", detail: "True if the sound's object no longer exists (only possible inside onLoseSound)", insert: "destroyed", kind: "Property" },
+  { label: "entity", detail: "The full entity that makes the sound (null once destroyed)", insert: "entity", kind: "Property" },
+  { label: "listener", detail: "The entity that is listening — this script's own object", insert: "listener", kind: "Property" },
+  { label: "pitch", detail: "The Audio Source's pitch", insert: "pitch", kind: "Property" },
+  { label: "loop", detail: "True if the Audio Source loops", insert: "loop", kind: "Property" },
+];
 const INPUT_API = [
   { label: "keyDown(key)", detail: 'Is the key currently held? Use key codes like "ArrowLeft", "Space", "KeyA" — or "Any" to check if ANY key is held.', insert: 'keyDown("', kind: "Method" },
   { label: "keyPressed(key)", detail: 'Was the key pressed this frame only (not held)? Same key codes as keyDown, plus "Any" for "was any key pressed this frame".', insert: 'keyPressed("', kind: "Method" },
@@ -1307,6 +1326,71 @@ function _getSaveKeyNames(extraSource) {
   return names;
 }
 
+// ─── "Don't make me guess" scanners ──────────────────────────────────────────
+// Names a script author invented themselves (globals, pools, this.<variables>,
+// their own functions) are not in any engine list, so Monaco can't know them
+// (wordBasedSuggestions is off on purpose). These scan the saved scripts plus
+// the text being edited right now, and feed completion so nobody has to scroll
+// up or open another script to remember what they called something.
+
+function _scanAllScriptSources(extraSource, fn) {
+  try { for (const n of getAllScripts()) fn(getScriptSource(n)); } catch (_) {}
+  if (extraSource) fn(extraSource);
+}
+
+/** Names used as global.<name> / global["name"] anywhere in the project. */
+function _getGlobalNames(extraSource) {
+  const names = new Set();
+  const dot = /\bglobal\s*\.\s*([A-Za-z_$][\w$]*)/g;
+  const idx = /\bglobal\s*\[\s*["']([^"']+)["']\s*\]/g;
+  _scanAllScriptSources(extraSource, (src) => {
+    if (!src) return;
+    let m;
+    dot.lastIndex = 0; while ((m = dot.exec(src)) !== null) names.add(m[1]);
+    idx.lastIndex = 0; while ((m = idx.exec(src)) !== null) names.add(m[1]);
+  });
+  return names;
+}
+
+/** Pool names created with pool.create("name", ...) anywhere in the project. */
+function _getPoolNames(extraSource) {
+  const names = new Set();
+  const rx = /\bpool\s*\.\s*create\s*\(\s*["']([^"']+)["']/g;
+  _scanAllScriptSources(extraSource, (src) => {
+    if (!src) return;
+    let m; rx.lastIndex = 0;
+    while ((m = rx.exec(src)) !== null) names.add(m[1]);
+  });
+  return names;
+}
+
+/** Variables this script keeps on `this` (this.speed = 5, this.hp -= 1, if (this.alive) ...). */
+function _getThisMembers(source) {
+  const names = new Set();
+  if (!source) return names;
+  const rx = /\bthis\s*\.\s*([A-Za-z_$][\w$]*)/g;
+  let m;
+  while ((m = rx.exec(source)) !== null) names.add(m[1]);
+  return names;
+}
+
+/**
+ * First-parameter names of the collision / trigger / hearing handlers, so
+ * `function onHear(s) { s.` and `function onCollisionEnter(hit) { hit.` get the
+ * right members even when the parameter isn't called exactly `sound` / `other`.
+ */
+function _parseHandlerParams(text) {
+  const sound = new Set(["sound"]);
+  const other = new Set(["other"]);
+  const rx = /\bfunction\s+(on[A-Z]\w*)\s*\(\s*([A-Za-z_$][\w$]*)/g;
+  let m;
+  while ((m = rx.exec(text)) !== null) {
+    if (/^(?:onHear|onHearSound|onLoseSound|onLooseSound)$/.test(m[1])) sound.add(m[2]);
+    else if (/^(?:onCollision|onCollisionEnter|onCollisionStay|onCollisionExit|onTriggerEnter|onTriggerExit)$/.test(m[1])) other.add(m[2]);
+  }
+  return { sound, other };
+}
+
 /**
  * Scan every saved script for message names actually being HANDLED —
  * i.e. checked with `if (message === "X")` / `if (message == "X")`
@@ -1409,6 +1493,21 @@ export function _detectStringContext(lineUntil, textUntilPosition) {
   // types partial text inside the string (not just immediately after the quote).
   const q = `["'][^"']*`;
 
+  // ── Names the author would otherwise have to remember ──
+  // .audioKey = " / .audioKey === " / sound.clip === "   → audio asset names
+  if (new RegExp(`(?:\\.audioKey|\\bsound\\s*\\.\\s*clip)\\s*[!=]?==?\\s*${q}$`).test(lineUntil)) return "audioName";
+  // sound.is(" / this.ear.canHear("  → scene object names (and tags)
+  if (new RegExp(`\\bsound\\s*\\.\\s*is\\s*\\(\\s*${q}$`).test(lineUntil)) return "nameOrTag";
+  if (new RegExp(`\\bear\\s*\\.\\s*canHear\\s*\\(\\s*${q}$`).test(lineUntil)) return "nameOrTag";
+  // pool.get(" / pool.find("  → pools created with pool.create("name", ...)
+  if (new RegExp(`\\bpool\\s*\\.\\s*(?:get|find)\\s*\\(\\s*${q}$`).test(lineUntil)) return "poolName";
+  // pool.create("  → the object to pool is a scene object name
+  if (new RegExp(`\\bpool\\s*\\.\\s*create\\s*\\(\\s*${q}$`).test(lineUntil)) return "entityName";
+  // global["  → global values used elsewhere in the project
+  if (new RegExp(`\\bglobal\\s*\\[\\s*${q}$`).test(lineUntil)) return "globalName";
+  // animator.currentClip === "
+  if (new RegExp(`\\banimator\\s*\\.\\s*currentClip\\s*[!=]==?\\s*${q}$`).test(lineUntil)) return "clipName";
+
   // input.keyDown(" / input.keyPressed(" / input.keyUp(" etc.
   if (new RegExp(`\\binput\\s*\\.\\s*key\\w*\\s*\\(\\s*${q}$`).test(lineUntil)) return "keyCode";
 
@@ -1449,7 +1548,7 @@ export function _detectStringContext(lineUntil, textUntilPosition) {
   if (new RegExp(`\\banimator\\s*\\.\\s*play\\s*\\(\\s*${q}$`).test(lineUntil)) return "clipName";
 
   // .texture = " or .texture = '
-  if (new RegExp(`\\.texture\\s*=\\s*${q}$`).test(lineUntil)) return "textureName";
+  if (new RegExp(`\\.texture\\s*[!=]?==?\\s*${q}$`).test(lineUntil)) return "textureName";
 
   // nav.areaIndex(" — single named NavWorld2D area (see NavAPI.js's
   // resolveNavAreaIndex and Edit → Nav Areas… for where names come from)
@@ -2979,6 +3078,32 @@ function _provideCompletionItemsImpl(monaco, model, position) {
         return { suggestions };
       }
 
+      // ── Physics layer numbers: physics.layer(…) / collider.layer = … ─────
+      // Layers are numbers in code but have names in Edit → Physics Layers…,
+      // so offer "1 — Player" style entries instead of making people look it up.
+      if (/\bphysics\s*\.\s*layer\s*\(\s*(?:\d+\s*,\s*)*\w*$/.test(lineUntil) || /\bcollider\s*\.\s*layer\s*=\s*\w*$/.test(lineUntil)) {
+        for (const l of getNamedLayers()) {
+          suggestions.push({
+            label: l.index + " \u2014 " + l.name,
+            filterText: l.index + " " + l.name,
+            sortText: String(l.index).padStart(2, "0"),
+            kind: monaco.languages.CompletionItemKind.EnumMember,
+            detail: "Physics layer \"" + l.name + "\" (Edit \u2192 Physics Layers\u2026)",
+            insertText: String(l.index),
+            range,
+          });
+        }
+        return { suggestions };
+      }
+
+      // ── global.<partial> → global values used anywhere in the project ────
+      if (/\bglobal\.\w*$/.test(lineUntil)) {
+        for (const name of [..._getGlobalNames(model.getValue())].sort()) {
+          suggestions.push(_makeCompletion(monaco, { label: name, detail: "Global value used elsewhere in this project", insert: name, kind: "Property" }, range));
+        }
+        return { suggestions };
+      }
+
       // ── String-argument context ──────────────────────────────────────────
       // Detect patterns like find("  scene.load("  input.keyDown("  .texture="
       // and return scene-aware / project-aware completions instead of code.
@@ -3038,6 +3163,38 @@ function _provideCompletionItemsImpl(monaco, model, position) {
             ));
           }
           // If no textures yet, still return empty (don't fall through)
+          return { suggestions };
+        }
+
+        if (stringCtx === "audioName") {
+          for (const name of _getAudioNames()) {
+            suggestions.push(_makeValueCompletion(monaco, name, "Audio asset", name + '"', range, hasClosingQuote));
+          }
+          return { suggestions };
+        }
+
+        if (stringCtx === "nameOrTag") {
+          // sound.is("…") / ear.canHear("…") accept an object name OR a tag.
+          for (const name of _getEntityNames()) {
+            suggestions.push(_makeValueCompletion(monaco, name, "Scene object (name)", name + '"', range, hasClosingQuote));
+          }
+          for (const tag of _getEntityTags()) {
+            suggestions.push(_makeValueCompletion(monaco, tag, "Entity tag", tag + '"', range, hasClosingQuote));
+          }
+          return { suggestions };
+        }
+
+        if (stringCtx === "poolName") {
+          for (const name of [..._getPoolNames(model.getValue())].sort()) {
+            suggestions.push(_makeValueCompletion(monaco, name, "Pool created with pool.create() in this project", name + '"', range, hasClosingQuote));
+          }
+          return { suggestions };
+        }
+
+        if (stringCtx === "globalName") {
+          for (const name of [..._getGlobalNames(model.getValue())].sort()) {
+            suggestions.push(_makeValueCompletion(monaco, name, "Global value used elsewhere in this project", name + '"', range, hasClosingQuote));
+          }
           return { suggestions };
         }
 
@@ -3284,7 +3441,18 @@ function _provideCompletionItemsImpl(monaco, model, position) {
       // `other` is only meaningful as the parameter name of onCollision*/
       // onTrigger* — matched literally rather than tracking real parameter
       // bindings, since Realot's callback signatures are fixed.
-      if (lineUntil.match(/\bother\.\w*$/)) {
+      // ── <sound>.<partial> → onHear / onLoseSound parameter (any parameter name) ──
+      const _handlerParams = _parseHandlerParams(textUntilPosition);
+      const _soundNames = [..._handlerParams.sound].join("|");
+      if (new RegExp("\\b(?:" + _soundNames + ")\\.\\w*$").test(lineUntil)) {
+        for (const item of SOUND_PARAM_API) suggestions.push(_makeCompletion(monaco, item, range));
+        for (const item of OTHER_PARAM_API) {
+          if (!SOUND_PARAM_API.some((s) => s.label === item.label || s.label.split("(")[0] === item.label.split("(")[0])) suggestions.push(_makeCompletion(monaco, item, range));
+        }
+        return { suggestions };
+      }
+
+      if (new RegExp("\\b(?:" + [..._handlerParams.other].join("|") + ")\\.\\w*$").test(lineUntil)) {
         for (const item of OTHER_PARAM_API) {
           suggestions.push(_makeCompletion(monaco, item, range));
         }
@@ -3312,6 +3480,14 @@ function _provideCompletionItemsImpl(monaco, model, position) {
             }
             suggestions.push(_makeCompletion(monaco, { label: c.name, detail: c.name + " component", insert: c.name + ".", kind: "Module" }, range));
           }
+        }
+        // Variables this script keeps on `this` (this.speed = 5 …): offer them so
+        // nobody has to scroll up to remember what they were called.
+        const _already = new Set(suggestions.map((x) => String(x.label).split(".")[0]));
+        const _typedNow = lineUntil.match(/\bthis\.(\w*)$/);
+        for (const name of [..._getThisMembers(model.getValue())].sort()) {
+          if (_already.has(name) || (_typedNow && name === _typedNow[1])) continue;
+          suggestions.push(_makeCompletion(monaco, { label: name, detail: "Your variable on this object (used in this script)", insert: name, kind: "Property" }, range));
         }
         return { suggestions };
       }
@@ -3637,8 +3813,8 @@ function _provideCompletionItemsImpl(monaco, model, position) {
       // of COLLIDER_2D (see EAR_API's identical gating a few hundred
       // lines up for `this.ear`).
       const snippetsAudioListener = [
-        { label: "function onHearSound(source)", detail: "Called the frame a 3D Audio Source enters this entity's Audio Listener radius. Requires an Audio Listener component.", insert: "onHearSound(source) {\n  $1\n}" },
-        { label: "function onLoseSound(source)", detail: "Called the frame a 3D Audio Source leaves this entity's Audio Listener radius (or is destroyed while in range). Requires an Audio Listener component.", insert: "onLoseSound(source) {\n  $1\n}" },
+        { label: "function onHear(sound)", detail: "Called the frame a 3D Audio Source enters this entity's Audio Listener radius. Use sound.name, sound.tag, sound.clip, sound.distance or sound.is(\"Name\").", insert: "onHear(sound) {\n  if (sound.name == \"${1:Siren}\") {\n    $0\n  }\n}" },
+        { label: "function onLoseSound(sound)", detail: "Called the frame a 3D Audio Source leaves this entity's Audio Listener radius (or is destroyed while in range — then sound.destroyed is true).", insert: "onLoseSound(sound) {\n  if (sound.name == \"${1:Siren}\") {\n    $0\n  }\n}" },
       ];
       const snippetContextKeys = _contextComponentKeys();
       let snippets = snippetsBase;

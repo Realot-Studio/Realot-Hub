@@ -15,7 +15,13 @@ import SCRIPT_API from "./script-api-index.js";
 
 // Names that exist in every script besides the generated API globals.
 const ENTITY_SHORTCUTS = ["sprite", "shape", "text", "rigidbody", "collider", "controller", "animator", "camera", "audio", "navAgent"];
-const LIFECYCLE = ["onStart", "onUpdate", "onFixedUpdate", "onClick", "onCollisionEnter", "onCollisionStay", "onCollisionExit", "onTriggerEnter", "onTriggerExit", "onMessage", "onDestroy", "onClone"];
+// Must match `lifecycleNames` in runtime/systems/ScriptSystem.js (anything else is not called by the engine).
+const LIFECYCLE = [
+  "onStart", "onUpdate", "onClick", "onFixedUpdate", "onCollision",
+  "onCollisionEnter", "onCollisionStay", "onCollisionExit", "onTriggerEnter", "onTriggerExit",
+  "onMessage", "onClone", "onDestroy", "onEnable", "onDisable",
+  "onStateEnter", "onStateUpdate", "onStateExit", "onHear", "onHearSound", "onLoseSound", "onLooseSound",
+];
 
 /** Recipes use only APIs documented in the guide / script API index. */
 const RECIPES = {
@@ -43,6 +49,19 @@ const RECIPES = {
   "timers-and-spawning": `TIMERS + SPAWNING
 - wait(1.5, fn) once; repeat(0.5, fn) repeatedly; cancelWait/cancelRepeat to stop. Start them from a lifecycle function (onStart).
 - spawn(nameOrTagOrEntity, opts) clones an entity; clones run onClone first. Use pool for frequent spawns.`,
+  "hear-sounds": `HEARING SOUNDS (onHear / onLoseSound)
+- The listener needs an Audio Listener component (radius = how far it hears). The sound-maker needs an Audio Source with is3D on.
+- Script on the listener:
+   function onHear(sound) {
+     if (sound.name == "Siren") debug.log("I hear the siren, " + Math.round(sound.distance) + " away");
+     if (sound.is("Enemy")) { this.alerted = true; }   // is() matches the name OR the tag, ignoring case
+   }
+   function onLoseSound(sound) {
+     if (sound.is("Siren")) debug.log("The siren faded out");   // sound.destroyed is true if it was removed
+   }
+- sound has: name, tag, clip, volume, pitch, loop, distance, destroyed, is(x), x, y, entity, listener.
+- onHearSound / onLooseSound are accepted aliases of onHear / onLoseSound.
+- Test: play_eval to move the listener into range, then read the Console (get_console).`,
   "enemy-chase-nav": `ENEMY CHASE WITH NAVIGATION
 - Add a NavWorld2D covering the level, bake_navworld (or paint_navigation_cells), then give the enemy a NavAgent2D (describe_component NavAgent2D) and drive its target from a script.
 - nav.findPath / nav.isWalkable exist for manual pathing (get_script_api nav).`,
